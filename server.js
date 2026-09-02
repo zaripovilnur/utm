@@ -42,6 +42,9 @@ app.get('/api/registry', async (req, res) => {
 });
 
 app.post('/api/registry', async (req, res) => {
+  if (!Array.isArray(req.body)) {
+    return res.status(400).json({ error: 'Expected a JSON array' });
+  }
   await writeJsonFile(FILES.registry, req.body);
   res.json({ ok: true });
 });
@@ -51,6 +54,9 @@ app.get('/api/presets', async (req, res) => {
 });
 
 app.post('/api/presets', async (req, res) => {
+  if (!Array.isArray(req.body)) {
+    return res.status(400).json({ error: 'Expected a JSON array' });
+  }
   await writeJsonFile(FILES.presets, req.body);
   res.json({ ok: true });
 });

@@ -377,8 +377,6 @@
 </div>
 
 <script>
-const REGISTRY_KEY = 'registry';
-const PRESETS_KEY = 'presets';
 let registry = [];
 let presets = [];
 
@@ -487,7 +485,7 @@ function updatePreview(){
   }
   document.getElementById('f-preview').innerHTML = '<strong>' + escapeHtml(link) + '</strong>';
 
-  const dup = registry.find(r => r.source===f.source && r.medium===f.medium && r.campaign===f.campaign);
+  const dup = registry.find(r => r.source===f.source && r.medium===f.medium && r.campaign===f.campaign && (r.company||'')===f.company);
   if(dup){
     dupBox.style.display = 'block';
     dupBox.textContent = 'Похожая метка уже есть в реестре (создана ' + dup.createdAt + '): ' + (dup.purpose || 'без описания') + '.';
@@ -659,6 +657,10 @@ function renderRegistry(){
 let currentQrLink = null;
 
 function openQr(link){
+  if(typeof QRCode === 'undefined'){
+    showToast('Не удалось загрузить генератор QR-кода — проверьте подключение к интернету');
+    return;
+  }
   currentQrLink = link;
   document.getElementById('qr-url').textContent = link;
   const holder = document.getElementById('qr-canvas-holder');
@@ -672,6 +674,7 @@ const QR_PRINT_SIZE = 1600;
 const QR_QUIET_ZONE_RATIO = 0.08;
 
 function buildPrintQrDataUrl(link){
+  if(typeof QRCode === 'undefined') return null;
   const tmp = document.createElement('div');
   tmp.style.position = 'fixed';
   tmp.style.left = '-9999px';
@@ -730,9 +733,7 @@ const REQUIRED_FIELDS = ['f-url','f-source','f-medium','f-campaign','f-purpose']
 
 function clearInvalid(id){ document.getElementById(id).classList.remove('field-invalid'); }
 REQUIRED_FIELDS.forEach(id=>{
-  const el = document.getElementById(id);
-  el.addEventListener('input', ()=> clearInvalid(id));
-  if(el.tagName === 'SELECT') el.addEventListener('change', ()=> clearInvalid(id));
+  document.getElementById(id).addEventListener('input', ()=> clearInvalid(id));
 });
 
 document.getElementById('btn-copy-preview').addEventListener('click', async ()=>{
