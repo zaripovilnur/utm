@@ -2,7 +2,7 @@ name: Deploy to server
 
 on:
   push:
-    branches: [ main ]
+    branches: [ claude/utm-registry-webapp-qfeudg ]
 
 jobs:
   deploy:
@@ -16,6 +16,6 @@ jobs:
           key: ${{ secrets.SSH_KEY }}
           script: |
             cd ~/utm
-            git pull origin main
+            git pull origin claude/utm-registry-webapp-qfeudg
             npm install
             pm2 restart utm-registry
