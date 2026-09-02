@@ -373,6 +373,29 @@ function escapeHtml(str){
   return String(str == null ? '' : str).replace(/[&<>"']/g, ch => ({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'}[ch]));
 }
 
+async function copyToClipboard(text){
+  try{
+    if(navigator.clipboard && window.isSecureContext){
+      await navigator.clipboard.writeText(text);
+      return true;
+    }
+  }catch(e){}
+  try{
+    const ta = document.createElement('textarea');
+    ta.value = text;
+    ta.style.position = 'fixed';
+    ta.style.left = '-9999px';
+    document.body.appendChild(ta);
+    ta.focus();
+    ta.select();
+    const ok = document.execCommand('copy');
+    document.body.removeChild(ta);
+    return ok;
+  }catch(e){
+    return false;
+  }
+}
+
 function openModal(id){ document.getElementById(id).classList.add('open'); }
 function closeModal(id){ document.getElementById(id).classList.remove('open'); }
 document.querySelectorAll('[data-close]').forEach(btn=>{
@@ -556,7 +579,10 @@ function renderRegistry(){
         </button>
       </td>
     `;
-    tr.querySelector('.copy-link').onclick = ()=>{ navigator.clipboard.writeText(r.fullLink); showToast('Ссылка скопирована'); };
+    tr.querySelector('.copy-link').onclick = async ()=>{
+      const ok = await copyToClipboard(r.fullLink);
+      showToast(ok ? 'Ссылка скопирована' : 'Не удалось скопировать ссылку');
+    };
     tr.querySelector('.qr-link').onclick = ()=> openQr(r.fullLink);
     tr.querySelector('.del-row').onclick = async ()=>{
       if(!confirm('Удалить эту метку из реестра?')) return;
@@ -667,7 +693,7 @@ document.getElementById('btn-copy-preview').addEventListener('click', async ()=>
     renderPresets();
   }
 
-  navigator.clipboard.writeText(link);
+  const copied = await copyToClipboard(link);
 
   ['f-url','f-source','f-medium','f-campaign','f-term','f-content','f-purpose'].forEach(id=>document.getElementById(id).value='');
   document.getElementById('f-savepreset').checked = false;
@@ -677,7 +703,7 @@ document.getElementById('btn-copy-preview').addEventListener('click', async ()=>
   currentPage = 1;
   renderRegistry();
   document.getElementById('form-panel').classList.remove('open');
-  showToast('Ссылка скопирована и добавлена в реестр');
+  showToast(copied ? 'Ссылка скопирована и добавлена в реестр' : 'Ссылка добавлена в реестр, но не скопирована');
 });
 
 document.getElementById('filter-search').addEventListener('input', ()=>{ currentPage = 1; renderRegistry(); });
