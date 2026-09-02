@@ -125,7 +125,6 @@
   input[list]{font-family:var(--mono);}
   input[type=text]:focus,textarea:focus{outline:none;border-color:var(--accent);box-shadow:0 0 0 3px var(--accent-soft);}
   input.field-invalid,textarea.field-invalid{border-color:var(--danger);box-shadow:0 0 0 3px var(--danger-soft);}
-  #f-company-row.field-invalid-row{box-shadow:0 0 0 3px var(--danger-soft);border-radius:var(--r-sm);}
   .row2{display:grid;grid-template-columns:1fr 1fr;gap:10px;}
   textarea{resize:vertical;min-height:60px;}
   .hint{font-size:11.5px;color:var(--ink-faint);margin-top:-7px;margin-bottom:13px;}
@@ -224,14 +223,6 @@
 
     <div class="form-grid2">
       <div>
-        <div class="field req" id="f-company-row">
-          <label>Компания</label>
-          <div class="preset-fields-row">
-            <label class="checkline"><input type="checkbox" class="company-folder-cb" data-folder="YADRO"> YADRO</label>
-            <label class="checkline"><input type="checkbox" class="company-folder-cb" data-folder="KVADRA"> KVADRA</label>
-            <label class="checkline"><input type="checkbox" class="company-folder-cb" data-folder="X"> X</label>
-          </div>
-        </div>
         <div class="field req">
           <label for="f-url">Ссылка на страницу</label>
           <input type="text" id="f-url" placeholder="https://site.ru/promo">
@@ -280,7 +271,12 @@
 
         <label class="checkline"><input type="checkbox" id="f-savepreset"> Сохранить как пресет</label>
         <div class="field" id="f-presetname-wrap" style="display:none;">
-          <div class="hint" style="margin-top:0;">Пресет сохранится в папку выбранной компании</div>
+          <label style="font-size:12px;color:var(--ink-faint);font-weight:500;margin-bottom:6px;">Компания</label>
+          <div class="preset-fields-row">
+            <label class="checkline"><input type="checkbox" class="company-folder-cb" data-folder="YADRO"> YADRO</label>
+            <label class="checkline"><input type="checkbox" class="company-folder-cb" data-folder="KVADRA"> KVADRA</label>
+            <label class="checkline"><input type="checkbox" class="company-folder-cb" data-folder="X"> X</label>
+          </div>
           <label style="font-size:12px;color:var(--ink-faint);font-weight:500;margin-bottom:6px;">Из каких меток состоит пресет</label>
           <div class="preset-fields-row">
             <label class="checkline"><input type="checkbox" id="f-preset-source" checked> utm_source</label>
@@ -526,7 +522,6 @@ function buildPresetChip(p){
     });
     if(p.folder){
       document.querySelectorAll('.company-folder-cb').forEach(cb=>{ cb.checked = cb.dataset.folder === p.folder; });
-      document.getElementById('f-company-row').classList.remove('field-invalid-row');
     }
     updatePreview();
   };
@@ -714,7 +709,6 @@ const companyFolderCbs = [...document.querySelectorAll('.company-folder-cb')];
 companyFolderCbs.forEach(cb=>{
   cb.addEventListener('change', ()=>{
     if(cb.checked) companyFolderCbs.forEach(other=>{ if(other!==cb) other.checked = false; });
-    document.getElementById('f-company-row').classList.remove('field-invalid-row');
   });
 });
 
@@ -744,21 +738,16 @@ document.getElementById('btn-copy-preview').addEventListener('click', async ()=>
   const normalizedKeys = {'f-source':'source','f-medium':'medium','f-campaign':'campaign'};
   const normalizedEmpty = Object.keys(normalizedKeys).filter(id=> !rawEmpty.includes(id) && !f[normalizedKeys[id]]);
   const invalid = [...rawEmpty, ...normalizedEmpty];
-  const companyRow = document.getElementById('f-company-row');
-  const companyMissing = !f.company;
 
   REQUIRED_FIELDS.forEach(id=> clearInvalid(id));
-  companyRow.classList.remove('field-invalid-row');
-  if(invalid.length || companyMissing){
+  if(invalid.length){
     invalid.forEach(id=> document.getElementById(id).classList.add('field-invalid'));
-    if(companyMissing) companyRow.classList.add('field-invalid-row');
     errBox.textContent = normalizedEmpty.length && !rawEmpty.length
       ? 'В выделенных полях после очистки от спецсимволов ничего не осталось — используйте буквы и цифры.'
-      : (companyMissing && !invalid.length ? 'Выберите компанию.' : 'Заполните выделенные поля, чтобы скопировать и сохранить ссылку.');
+      : 'Заполните выделенные поля, чтобы скопировать и сохранить ссылку.';
     errBox.style.display = 'block';
     dupBox.style.display = 'none';
-    if(invalid.length) document.getElementById(invalid[0]).focus();
-    else companyRow.scrollIntoView({behavior:'smooth', block:'center'});
+    document.getElementById(invalid[0]).focus();
     return;
   }
 
