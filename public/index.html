@@ -280,7 +280,12 @@
 
         <label class="checkline"><input type="checkbox" id="f-savepreset"> Сохранить как пресет</label>
         <div class="field" id="f-presetname-wrap" style="display:none;">
-          <div class="hint" style="margin-top:0;">Пресет сохранится в папку выбранной компании</div>
+          <label style="font-size:12px;color:var(--ink-faint);font-weight:500;margin-bottom:6px;">В какую папку сохранить пресет</label>
+          <div class="preset-fields-row">
+            <label class="checkline"><input type="checkbox" class="preset-folder-cb" data-folder="YADRO"> YADRO</label>
+            <label class="checkline"><input type="checkbox" class="preset-folder-cb" data-folder="KVADRA"> KVADRA</label>
+            <label class="checkline"><input type="checkbox" class="preset-folder-cb" data-folder="X"> X</label>
+          </div>
           <label style="font-size:12px;color:var(--ink-faint);font-weight:500;margin-bottom:6px;">Из каких меток состоит пресет</label>
           <div class="preset-fields-row">
             <label class="checkline"><input type="checkbox" id="f-preset-source" checked> utm_source</label>
@@ -702,8 +707,19 @@ document.getElementById('btn-open-form-empty').onclick = openFormPanel;
 document.getElementById('btn-collapse-form').onclick = ()=> document.getElementById('form-panel').classList.remove('open');
 document.getElementById('btn-open-glossary').onclick = ()=> openModal('overlay-glossary');
 
+const presetFolderCbs = [...document.querySelectorAll('.preset-folder-cb')];
+presetFolderCbs.forEach(cb=>{
+  cb.addEventListener('change', ()=>{
+    if(cb.checked) presetFolderCbs.forEach(other=>{ if(other!==cb) other.checked = false; });
+  });
+});
+
 document.getElementById('f-savepreset').addEventListener('change', (e)=>{
   document.getElementById('f-presetname-wrap').style.display = e.target.checked ? 'block' : 'none';
+  if(e.target.checked){
+    const company = document.getElementById('f-company').value;
+    presetFolderCbs.forEach(cb=>{ cb.checked = cb.dataset.folder === company; });
+  }
 });
 
 ['f-url','f-source','f-medium','f-campaign','f-term','f-content'].forEach(id=>{
@@ -766,8 +782,10 @@ document.getElementById('btn-copy-preview').addEventListener('click', async ()=>
   if(document.getElementById('f-savepreset').checked){
     const fields = PRESET_FIELD_KEYS.filter(key => document.getElementById('f-preset-'+key).checked);
     if(fields.length){
+      const checkedFolderCb = presetFolderCbs.find(cb=> cb.checked);
+      const folder = checkedFolderCb ? checkedFolderCb.dataset.folder : f.company;
       const name = document.getElementById('f-presetname').value.trim() || (f.source + ' / ' + f.medium);
-      const preset = { id: 'preset_'+now.getTime(), name, fields, folder: f.company };
+      const preset = { id: 'preset_'+now.getTime(), name, fields, folder };
       fields.forEach(key => { preset[key] = f[key]; });
       presets.push(preset);
       await savePresets();
@@ -786,6 +804,7 @@ document.getElementById('btn-copy-preview').addEventListener('click', async ()=>
   document.getElementById('f-preset-campaign').checked = false;
   document.getElementById('f-preset-term').checked = false;
   document.getElementById('f-preset-content').checked = false;
+  presetFolderCbs.forEach(cb=> cb.checked = false);
   updatePreview();
   currentPage = 1;
   renderRegistry();
