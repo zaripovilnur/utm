@@ -594,22 +594,51 @@ function renderRegistry(){
   });
 }
 
+let currentQrLink = null;
+
 function openQr(link){
+  currentQrLink = link;
   document.getElementById('qr-url').textContent = link;
   const holder = document.getElementById('qr-canvas-holder');
   holder.innerHTML = '';
-  new QRCode(holder, { text: link, width: 168, height: 168, colorDark: '#17181B', colorLight: '#ffffff' });
+  new QRCode(holder, { text: link, width: 168, height: 168, colorDark: '#17181B', colorLight: '#ffffff', correctLevel: QRCode.CorrectLevel.H });
   openModal('overlay-qr');
 }
+
+// Печатное качество: крупный canvas + белое поле (quiet zone) вокруг QR — так код остаётся читаемым сканером после печати.
+const QR_PRINT_SIZE = 1600;
+const QR_QUIET_ZONE_RATIO = 0.08;
+
+function buildPrintQrDataUrl(link){
+  const tmp = document.createElement('div');
+  tmp.style.position = 'fixed';
+  tmp.style.left = '-9999px';
+  document.body.appendChild(tmp);
+  new QRCode(tmp, { text: link, width: QR_PRINT_SIZE, height: QR_PRINT_SIZE, colorDark: '#17181B', colorLight: '#ffffff', correctLevel: QRCode.CorrectLevel.H });
+  const srcCanvas = tmp.querySelector('canvas');
+  let dataUrl = null;
+  if(srcCanvas){
+    const margin = Math.round(QR_PRINT_SIZE * QR_QUIET_ZONE_RATIO);
+    const out = document.createElement('canvas');
+    out.width = QR_PRINT_SIZE + margin * 2;
+    out.height = QR_PRINT_SIZE + margin * 2;
+    const ctx = out.getContext('2d');
+    ctx.fillStyle = '#ffffff';
+    ctx.fillRect(0, 0, out.width, out.height);
+    ctx.drawImage(srcCanvas, margin, margin, QR_PRINT_SIZE, QR_PRINT_SIZE);
+    dataUrl = out.toDataURL('image/png');
+  }
+  document.body.removeChild(tmp);
+  return dataUrl;
+}
+
 document.getElementById('qr-download').onclick = ()=>{
-  const holder = document.getElementById('qr-canvas-holder');
-  const canvas = holder.querySelector('canvas');
-  const img = holder.querySelector('img');
-  const dataUrl = canvas ? canvas.toDataURL('image/png') : (img ? img.src : null);
+  if(!currentQrLink){ showToast('Не удалось получить изображение'); return; }
+  const dataUrl = buildPrintQrDataUrl(currentQrLink);
   if(!dataUrl){ showToast('Не удалось получить изображение'); return; }
   const a = document.createElement('a');
   a.href = dataUrl;
-  a.download = 'qr-utm.png';
+  a.download = 'qr-utm-print.png';
   a.click();
 };
 
