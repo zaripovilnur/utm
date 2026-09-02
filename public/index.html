@@ -159,18 +159,9 @@
   .badge-company{display:inline-block;background:var(--active-soft);color:var(--active);border-radius:5px;padding:1px 6px;font-size:11.5px;font-family:var(--mono);}
 
   /* glossary */
-  .glossary-howto{margin-bottom:20px;padding-bottom:18px;border-bottom:1px solid var(--line-soft);}
   .glossary-howto p{margin:0 0 10px;font-size:13px;line-height:1.5;color:var(--ink-soft);}
   .glossary-howto p:last-child{margin-bottom:0;}
   .glossary-howto strong{color:var(--ink);font-weight:600;}
-  .glossary-grid{display:grid;grid-template-columns:1fr 1fr;gap:22px;}
-  @media (max-width:600px){.glossary-grid{grid-template-columns:1fr;}}
-  .gterm{margin-bottom:16px;}
-  .gterm code{font-family:var(--mono);font-size:12.5px;background:var(--accent-soft);color:var(--accent-hover);padding:2px 6px;border-radius:5px;}
-  .gterm p{margin:6px 0 0;color:var(--ink-soft);font-size:13px;}
-  .gex{display:flex;gap:10px;margin-top:7px;font-family:var(--mono);font-size:12px;flex-wrap:wrap;}
-  .gex .ok{color:var(--active);}
-  .gex .bad{color:var(--danger);text-decoration:line-through;}
 
   .toast{position:fixed;bottom:24px;left:50%;transform:translateX(-50%) translateY(6px);background:var(--ink);color:#fff;padding:10px 18px;border-radius:var(--r-md);font-size:13px;opacity:0;pointer-events:none;transition:opacity .15s ease, transform .15s ease;z-index:60;box-shadow:0 8px 24px rgba(0,0,0,0.2);}
   .toast.show{opacity:1;transform:translateX(-50%) translateY(0);}
@@ -353,18 +344,6 @@
       <p><strong>Метка:</strong> выберите компанию, укажите ссылку и заполните utm-поля — справа сразу соберётся готовая ссылка. «Скопировать ссылку» копирует её и добавляет запись в реестр.</p>
       <p><strong>Пресет:</strong> отметьте «Сохранить как пресет», выберите, какие метки в нём сохранить, и компанию — в следующий раз нужный набор подставится одним кликом из её папки (YADRO / KVADRA / X).</p>
       <p><strong>QR-код:</strong> у каждой ссылки в реестре есть кнопка QR — можно посмотреть код и скачать PNG в высоком разрешении, подходящем для печати.</p>
-    </div>
-    <div class="glossary-grid">
-      <div>
-        <div class="gterm"><code>utm_source</code><p>Где стоит ссылка: конкретная площадка или отправитель.</p><div class="gex"><span class="ok">yandex, vk, sendsay</span><span class="bad">Yandex, ВКонтакте</span></div></div>
-        <div class="gterm"><code>utm_medium</code><p>Тип канала, а не площадка. Единый набор значений на все кампании: cpc, cpm, email, social, referral, banner, push.</p><div class="gex"><span class="ok">cpc</span><span class="bad">яндекс_директ</span></div></div>
-        <div class="gterm"><code>utm_campaign</code><p>Название конкретной кампании. Коротко, с датой или периодом, если кампания повторяется.</p><div class="gex"><span class="ok">autumn_sale_2026</span><span class="bad">кампания1(новая)</span></div></div>
-      </div>
-      <div>
-        <div class="gterm"><code>utm_term</code><p>Ключевое слово или сегмент — заполняется только в платном поиске или таргетинге по сегментам.</p></div>
-        <div class="gterm"><code>utm_content</code><p>Что отличает объявление внутри одной кампании — вариант креатива, позиция баннера, номер письма.</p><div class="gex"><span class="ok">banner_top, letter_2</span><span class="bad">вариант Б</span></div></div>
-        <div class="gterm"><code>Назначение</code><p>Пишите так, чтобы через полгода коллега понял источник трафика без вас: канал, дата, конкретный повод.</p></div>
-      </div>
     </div>
   </div>
 </div>
