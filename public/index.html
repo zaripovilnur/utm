@@ -148,9 +148,15 @@
   .no-presets{font-size:12px;color:var(--ink-faint);}
   .preset-fields-row{display:flex;flex-wrap:wrap;gap:4px 14px;margin:2px 0 10px;}
   .preset-fields-row .checkline{margin:0;font-family:var(--mono);font-size:12px;}
-  .preset-group{margin-bottom:10px;}
+  .preset-group{margin-bottom:4px;}
   .preset-group:last-child{margin-bottom:0;}
-  .preset-group-label{font-size:11px;font-weight:600;color:var(--ink-faint);text-transform:uppercase;letter-spacing:.03em;margin-bottom:5px;}
+  .preset-group-label{display:flex;align-items:center;gap:7px;width:100%;font-size:11px;font-weight:600;color:var(--ink-faint);text-transform:uppercase;letter-spacing:.03em;background:none;border:none;padding:6px 8px;margin:0;cursor:pointer;border-radius:7px;font-family:var(--sans);}
+  .preset-group-label:hover{background:var(--line-soft);color:var(--ink);}
+  .preset-group-label span:nth-child(2){flex:1;text-align:left;}
+  .preset-group-arrow{display:inline-block;font-size:13px;line-height:1;transition:transform .12s ease;color:var(--ink-faint);}
+  .preset-group-label[aria-expanded="true"] .preset-group-arrow{transform:rotate(90deg);}
+  .preset-group-count{font-family:var(--mono);font-size:11px;font-weight:500;text-transform:none;letter-spacing:0;color:var(--ink-faint);background:var(--inactive-soft);border-radius:99px;padding:1px 8px;}
+  .preset-group .presets-inline{padding:8px 8px 2px;}
   .badge-company{display:inline-block;background:var(--active-soft);color:var(--active);border-radius:5px;padding:1px 6px;font-size:11.5px;font-family:var(--mono);}
 
   /* glossary */
@@ -533,27 +539,44 @@ function buildPresetChip(p){
   return chip;
 }
 
+const openPresetFolders = new Set();
+
 function renderPresets(){
   const container = document.getElementById('presets-list');
   container.innerHTML = '';
   const legacy = presets.filter(p=> !p.folder);
   const groups = legacy.length ? [...FOLDERS, null] : FOLDERS;
   groups.forEach(folder=>{
+    const key = folder || '__legacy__';
     const items = folder === null ? legacy : presets.filter(p=> p.folder === folder);
+    const isOpen = openPresetFolders.has(key);
+
     const group = document.createElement('div');
     group.className = 'preset-group';
-    const label = document.createElement('div');
+
+    const label = document.createElement('button');
+    label.type = 'button';
     label.className = 'preset-group-label';
-    label.textContent = folder || 'Без папки';
+    label.setAttribute('aria-expanded', isOpen ? 'true' : 'false');
+    label.innerHTML = `<span class="preset-group-arrow">›</span><span>${escapeHtml(folder || 'Без папки')}</span><span class="preset-group-count">${items.length}</span>`;
+    label.onclick = ()=>{
+      if(openPresetFolders.has(key)) openPresetFolders.delete(key);
+      else openPresetFolders.add(key);
+      renderPresets();
+    };
     group.appendChild(label);
-    const chipsWrap = document.createElement('div');
-    chipsWrap.className = 'presets-inline';
-    if(items.length === 0){
-      chipsWrap.innerHTML = '<span class="no-presets">Пока нет пресетов</span>';
-    }else{
-      items.forEach(p=> chipsWrap.appendChild(buildPresetChip(p)));
+
+    if(isOpen){
+      const chipsWrap = document.createElement('div');
+      chipsWrap.className = 'presets-inline';
+      if(items.length === 0){
+        chipsWrap.innerHTML = '<span class="no-presets">Пока нет пресетов</span>';
+      }else{
+        items.forEach(p=> chipsWrap.appendChild(buildPresetChip(p)));
+      }
+      group.appendChild(chipsWrap);
     }
-    group.appendChild(chipsWrap);
+
     container.appendChild(group);
   });
 }
