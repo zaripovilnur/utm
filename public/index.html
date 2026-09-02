@@ -1,0 +1,691 @@
+<!DOCTYPE html>
+<html lang="ru">
+<head>
+<meta charset="UTF-8">
+<title>UTM-реестр</title>
+<script src="https://cdnjs.cloudflare.com/ajax/libs/qrcodejs/1.0.0/qrcode.min.js"></script>
+<style>
+  :root{
+    --bg:#F6F6F3;
+    --surface:#FFFFFF;
+    --ink:#17181B;
+    --ink-soft:#6D6F78;
+    --ink-faint:#9C9EA6;
+    --line:#E7E6E0;
+    --line-soft:#F0EFEA;
+    --accent:#3452D9;
+    --accent-hover:#2A42B8;
+    --accent-soft:#ECF0FD;
+    --active:#1F8A5F;
+    --active-soft:#E5F4ED;
+    --inactive:#8B8D97;
+    --inactive-soft:#EEEEF1;
+    --danger:#C4432B;
+    --danger-soft:#FBEAE5;
+    --warn:#AD7A14;
+    --warn-soft:#FBF1DC;
+    --shadow-modal: 0 20px 60px rgba(20,20,25,0.18), 0 2px 8px rgba(20,20,25,0.06);
+    --mono: "SFMono-Regular","IBM Plex Mono",Consolas,"Liberation Mono",Menlo,monospace;
+    --sans: -apple-system,BlinkMacSystemFont,"Segoe UI",Roboto,Helvetica,Arial,sans-serif;
+    --r-sm:6px; --r-md:10px; --r-lg:14px;
+  }
+  *{box-sizing:border-box;}
+  body{margin:0;background:var(--bg);color:var(--ink);font-family:var(--sans);font-size:14px;line-height:1.5;-webkit-font-smoothing:antialiased;}
+  .wrap{max-width:1180px;margin:0 auto;padding:36px 24px 72px;}
+  button,input,select,textarea{font-family:var(--sans);}
+  :focus-visible{outline:2px solid var(--accent);outline-offset:1px;}
+
+  /* header */
+  .top{display:flex;align-items:flex-start;justify-content:space-between;gap:24px;margin-bottom:26px;flex-wrap:wrap;}
+  .top-left{display:flex;gap:12px;align-items:flex-start;}
+  .logo{width:36px;height:36px;border-radius:9px;background:var(--ink);color:#fff;display:flex;align-items:center;justify-content:center;flex-shrink:0;font-size:14px;font-weight:600;letter-spacing:-0.02em;}
+  .top h1{font-size:20px;font-weight:600;margin:0 0 3px;letter-spacing:-0.01em;}
+  .top p{margin:0;color:var(--ink-soft);font-size:13px;max-width:520px;}
+  .top-stats{display:flex;gap:18px;padding-top:6px;}
+  .stat{text-align:right;}
+  .stat b{display:block;font-size:18px;font-weight:600;color:var(--ink);}
+  .stat span{font-size:11.5px;color:var(--ink-faint);}
+
+  /* toolbar */
+  .toolbar{display:flex;align-items:center;gap:10px;margin-bottom:16px;flex-wrap:wrap;}
+  .search-wrap{position:relative;flex:1;min-width:220px;}
+  .search-wrap svg{position:absolute;left:12px;top:50%;transform:translateY(-50%);color:var(--ink-faint);pointer-events:none;}
+  .search-wrap input#filter-search{width:100%;padding:9px 12px 9px 36px;border:1px solid var(--line);border-radius:var(--r-md);background:var(--surface);font-size:13.5px;color:var(--ink);}
+  .search-wrap input:focus{border-color:var(--accent);}
+  select.chip-select{border:1px solid var(--line);border-radius:var(--r-md);background:var(--surface);padding:9px 30px 9px 12px;font-size:13px;color:var(--ink-soft);appearance:none;background-image:url("data:image/svg+xml;utf8,<svg xmlns='http://www.w3.org/2000/svg' width='10' height='6'><path d='M1 1l4 4 4-4' stroke='%236D6F78' stroke-width='1.4' fill='none'/></svg>");background-repeat:no-repeat;background-position:right 11px center;}
+  select.chip-select:focus{border-color:var(--accent);}
+  .spacer{flex:1;}
+
+  .btn{display:inline-flex;align-items:center;gap:7px;border-radius:var(--r-md);padding:9px 15px;font-size:13.5px;font-weight:500;border:1px solid transparent;cursor:pointer;white-space:nowrap;transition:background .12s ease, border-color .12s ease, transform .05s ease;}
+  .btn:active{transform:scale(0.98);}
+  .btn-primary{background:var(--accent);color:#fff;}
+  .btn-primary:hover{background:var(--accent-hover);}
+  .btn-ghost{background:var(--surface);color:var(--ink);border-color:var(--line);}
+  .btn-ghost:hover{background:var(--line-soft);}
+  .btn-text{background:none;border:none;color:var(--ink-soft);padding:4px 2px;}
+  .btn-text:hover{color:var(--ink);}
+  .icon-btn{border:none;background:none;color:var(--ink-faint);padding:5px;border-radius:7px;display:inline-flex;cursor:pointer;}
+  .icon-btn:hover{background:var(--line-soft);color:var(--ink);}
+  .icon-btn.danger:hover{background:var(--danger-soft);color:var(--danger);}
+
+  /* table card */
+  .table-card{background:var(--surface);border:1px solid var(--line);border-radius:var(--r-lg);overflow:hidden;}
+  table{width:100%;border-collapse:collapse;font-size:13px;}
+  thead th{text-align:left;font-weight:500;color:var(--ink-faint);font-size:11px;text-transform:none;border-bottom:1px solid var(--line);padding:12px 14px;white-space:nowrap;background:#FCFCFB;}
+  tbody td{border-bottom:1px solid var(--line-soft);padding:13px 14px;vertical-align:top;}
+  tbody tr:last-child td{border-bottom:none;}
+  tbody tr:hover{background:#FBFBF9;}
+  .link-cell{font-family:var(--mono);font-size:12px;max-width:280px;}
+  .link-url{color:var(--ink-soft);line-height:1.5;white-space:nowrap;overflow:hidden;text-overflow:ellipsis;max-width:280px;display:block;cursor:default;}
+  .row-actions{display:flex;gap:2px;margin-top:6px;}
+  .campaign-cell,.purpose-cell{font-size:13px;line-height:1.5;color:var(--ink-soft);}
+  .campaign-cell{color:var(--ink);}
+  .purpose-cell{max-width:220px;}
+  .tag-pair{font-family:var(--mono);font-size:12px;white-space:nowrap;line-height:1.5;}
+  .tag-pair .med{color:var(--ink-faint);margin-left:8px;}
+  .badge-source{display:inline-block;background:var(--accent-soft);color:var(--accent);border-radius:5px;padding:1px 6px;font-size:11.5px;font-family:var(--mono);}
+
+
+  .empty-state{padding:64px 20px;text-align:center;color:var(--ink-soft);}
+  .empty-state svg{color:var(--ink-faint);margin-bottom:12px;}
+  .empty-state p{margin:0 0 16px;font-size:13.5px;}
+
+  .pagination{display:flex;align-items:center;justify-content:space-between;padding:12px 14px;border-top:1px solid var(--line);}
+  .pagination .page-info{font-size:12.5px;color:var(--ink-soft);}
+  .pagination .page-btns{display:flex;gap:4px;}
+  .pagination .icon-btn:disabled{opacity:0.35;cursor:default;}
+  .pagination .icon-btn:disabled:hover{background:none;color:var(--ink-faint);}
+
+  /* overlay + modal */
+  .overlay{position:fixed;inset:0;background:rgba(20,20,23,0.4);display:none;align-items:flex-start;justify-content:center;z-index:50;padding:6vh 16px;overflow-y:auto;}
+  .overlay.open{display:flex;}
+  .modal{background:var(--surface);border-radius:var(--r-lg);box-shadow:var(--shadow-modal);width:100%;padding:26px 28px 28px;animation:modalIn .14s ease;}
+  @keyframes modalIn{from{opacity:0;transform:translateY(6px) scale(0.99);}to{opacity:1;transform:none;}}
+  .modal.w-glossary{max-width:640px;}
+
+  /* inline form panel (not a popup) */
+  .form-panel{background:var(--surface);border:1px solid var(--line);border-radius:var(--r-lg);padding:22px 24px 24px;margin-bottom:16px;display:none;}
+  .form-panel.open{display:block;animation:panelIn .16s ease;}
+  @keyframes panelIn{from{opacity:0;transform:translateY(-4px);}to{opacity:1;transform:none;}}
+  .form-panel .panel-head{display:flex;justify-content:space-between;align-items:flex-start;margin-bottom:18px;}
+  .form-panel .panel-head h2{font-size:15px;font-weight:600;margin:0;}
+  .form-panel .form-grid2{display:grid;grid-template-columns:1fr 1fr;gap:24px;}
+  @media (max-width:700px){.form-panel .form-grid2{grid-template-columns:1fr;}}
+  .modal.w-qr{max-width:300px;text-align:center;}
+  .modal-head{display:flex;justify-content:space-between;align-items:flex-start;margin-bottom:18px;}
+  .modal-head h2{font-size:16px;font-weight:600;margin:0;}
+  .modal-close{border:none;background:none;color:var(--ink-faint);cursor:pointer;padding:4px;border-radius:6px;}
+  .modal-close:hover{background:var(--line-soft);color:var(--ink);}
+
+  /* form */
+  label{display:block;font-size:12.5px;color:var(--ink-soft);margin:0 0 5px;font-weight:500;}
+  .field{margin-bottom:13px;}
+  .field.req label:after{content:" *";color:var(--danger);}
+  input[type=text],textarea{width:100%;border:1px solid var(--line);border-radius:var(--r-sm);padding:9px 10px;font-family:var(--sans);font-size:13.5px;background:var(--surface);color:var(--ink);}
+  input[list]{font-family:var(--mono);}
+  input[type=text]:focus,textarea:focus{outline:none;border-color:var(--accent);box-shadow:0 0 0 3px var(--accent-soft);}
+  input.field-invalid,textarea.field-invalid{border-color:var(--danger);box-shadow:0 0 0 3px var(--danger-soft);}
+  .row2{display:grid;grid-template-columns:1fr 1fr;gap:10px;}
+  textarea{resize:vertical;min-height:60px;}
+  .hint{font-size:11.5px;color:var(--ink-faint);margin-top:-7px;margin-bottom:13px;}
+  .warn-inline{font-size:12px;color:var(--warn);background:var(--warn-soft);border-radius:var(--r-sm);padding:8px 10px;margin-bottom:13px;}
+  .err{font-size:12px;color:var(--danger);margin:-6px 0 10px;}
+
+  .preview-box{font-family:var(--mono);font-size:12px;background:#FAFAF8;border:1px solid var(--line);border-radius:var(--r-sm);padding:10px 11px;word-break:break-all;color:var(--ink-soft);margin-bottom:10px;min-height:20px;}
+  .preview-box strong{color:var(--ink);font-weight:500;}
+  .preview-actions{display:flex;gap:8px;margin-bottom:14px;}
+  .preview-actions .btn{flex:1;justify-content:center;}
+
+  .checkline{display:flex;align-items:center;gap:8px;margin:2px 0 12px;font-size:13px;color:var(--ink-soft);}
+  .checkline input{width:auto;}
+
+  .form-footer{display:flex;justify-content:space-between;align-items:center;gap:12px;margin-top:6px;border-top:1px solid var(--line-soft);padding-top:16px;}
+  .presets-inline{display:flex;flex-wrap:wrap;gap:6px;flex:1;}
+  .preset-chip{display:inline-flex;align-items:center;gap:6px;border:1px solid var(--line);border-radius:99px;padding:5px 6px 5px 11px;font-size:12px;background:var(--surface);}
+  .preset-chip button.use{border:none;background:none;padding:0;font:inherit;color:var(--ink);font-weight:500;}
+  .preset-chip .del{border:none;background:none;color:var(--ink-faint);padding:1px 5px;font-size:13px;line-height:1;border-radius:50%;}
+  .preset-chip .del:hover{background:var(--danger-soft);color:var(--danger);}
+  .no-presets{font-size:12px;color:var(--ink-faint);}
+
+  /* glossary */
+  .glossary-grid{display:grid;grid-template-columns:1fr 1fr;gap:22px;}
+  @media (max-width:600px){.glossary-grid{grid-template-columns:1fr;}}
+  .gterm{margin-bottom:16px;}
+  .gterm code{font-family:var(--mono);font-size:12.5px;background:var(--accent-soft);color:var(--accent-hover);padding:2px 6px;border-radius:5px;}
+  .gterm p{margin:6px 0 0;color:var(--ink-soft);font-size:13px;}
+  .gex{display:flex;gap:10px;margin-top:7px;font-family:var(--mono);font-size:12px;flex-wrap:wrap;}
+  .gex .ok{color:var(--active);}
+  .gex .bad{color:var(--danger);text-decoration:line-through;}
+
+  .toast{position:fixed;bottom:24px;left:50%;transform:translateX(-50%) translateY(6px);background:var(--ink);color:#fff;padding:10px 18px;border-radius:var(--r-md);font-size:13px;opacity:0;pointer-events:none;transition:opacity .15s ease, transform .15s ease;z-index:60;box-shadow:0 8px 24px rgba(0,0,0,0.2);}
+  .toast.show{opacity:1;transform:translateX(-50%) translateY(0);}
+
+  #qr-canvas-holder{display:flex;justify-content:center;margin:16px 0;}
+  .qr-url{font-family:var(--mono);font-size:11px;color:var(--ink-soft);word-break:break-all;}
+  .qr-actions{display:flex;gap:8px;margin-top:6px;}
+  .qr-actions .btn{flex:1;justify-content:center;}
+
+  @media (max-width:640px){
+    .top-stats{display:none;}
+    .modal{padding:20px;}
+  }
+</style>
+</head>
+<body>
+<div class="wrap">
+
+  <div class="top">
+    <div class="top-left">
+      <div class="logo">U</div>
+      <div>
+        <h1>UTM-реестр</h1>
+        <p>Единый реестр меток команды.</p>
+      </div>
+    </div>
+    <div class="top-stats" id="top-stats"></div>
+  </div>
+
+  <div class="toolbar">
+    <div class="search-wrap">
+      <svg width="15" height="15" viewBox="0 0 16 16" fill="none"><circle cx="7" cy="7" r="5.2" stroke="currentColor" stroke-width="1.4"/><path d="M11 11l3.3 3.3" stroke="currentColor" stroke-width="1.4" stroke-linecap="round"/></svg>
+      <input type="text" id="filter-search" placeholder="Поиск по ссылке, назначению, кампании…">
+    </div>
+    <select class="chip-select" id="filter-source">
+      <option value="all">Все источники</option>
+    </select>
+    <div class="spacer"></div>
+    <button class="btn btn-ghost" id="btn-open-glossary">
+      <svg width="15" height="15" viewBox="0 0 16 16" fill="none"><circle cx="8" cy="8" r="6.3" stroke="currentColor" stroke-width="1.3"/><path d="M8 7.3v4" stroke="currentColor" stroke-width="1.3" stroke-linecap="round"/><circle cx="8" cy="5.1" r="0.9" fill="currentColor"/></svg>
+      Конвенция
+    </button>
+    <button class="btn btn-primary" id="btn-open-form">
+      <svg width="15" height="15" viewBox="0 0 16 16" fill="none"><path d="M8 3v10M3 8h10" stroke="currentColor" stroke-width="1.6" stroke-linecap="round"/></svg>
+      Новая метка
+    </button>
+  </div>
+
+  <div class="form-panel" id="form-panel">
+    <div class="panel-head">
+      <h2>Новая метка</h2>
+      <button class="modal-close" id="btn-collapse-form">
+        <svg width="18" height="18" viewBox="0 0 16 16" fill="none"><path d="M4 4l8 8M12 4l-8 8" stroke="currentColor" stroke-width="1.5" stroke-linecap="round"/></svg>
+      </button>
+    </div>
+
+    <div class="form-grid2">
+      <div>
+        <div class="field req">
+          <label for="f-url">Ссылка на страницу</label>
+          <input type="text" id="f-url" placeholder="https://site.ru/promo">
+        </div>
+        <div class="row2">
+          <div class="field req">
+            <label for="f-source">utm_source</label>
+            <input type="text" id="f-source" list="dl-source" placeholder="яндекс">
+          </div>
+          <div class="field req">
+            <label for="f-medium">utm_medium</label>
+            <input type="text" id="f-medium" list="dl-medium" placeholder="cpc">
+          </div>
+        </div>
+        <div class="field req">
+          <label for="f-campaign">utm_campaign</label>
+          <input type="text" id="f-campaign" placeholder="Осенняя распродажа 2026">
+        </div>
+        <div class="hint">Кириллица, пробелы и заглавные буквы автоматически переводятся в латиницу нижнего регистра.</div>
+        <div class="row2">
+          <div class="field">
+            <label for="f-term">utm_term (необязательно)</label>
+            <input type="text" id="f-term" placeholder="">
+          </div>
+          <div class="field">
+            <label for="f-content">utm_content (необязательно)</label>
+            <input type="text" id="f-content" placeholder="">
+          </div>
+        </div>
+      </div>
+
+      <div>
+        <div class="field req">
+          <label for="f-purpose">Зачем создана эта метка</label>
+          <textarea id="f-purpose" placeholder="Мероприятие в Краснодаре" style="min-height:78px;"></textarea>
+        </div>
+
+        <div id="f-error" class="err" style="display:none;"></div>
+        <div id="f-dup" class="warn-inline" style="display:none;"></div>
+
+        <label style="font-size:12px;color:var(--ink-faint);font-weight:500;margin-bottom:5px;">Готовая ссылка</label>
+        <div class="preview-box" id="f-preview">Заполните поля — ссылка соберётся здесь</div>
+        <div class="preview-actions">
+          <button class="btn btn-primary" id="btn-copy-preview" style="width:100%;">Скопировать ссылку</button>
+        </div>
+
+        <label class="checkline"><input type="checkbox" id="f-savepreset"> Сохранить источник/канал как пресет</label>
+        <div class="field" id="f-presetname-wrap" style="display:none;">
+          <input type="text" id="f-presetname" placeholder="Название пресета, напр. «Яндекс Директ»">
+        </div>
+      </div>
+    </div>
+
+    <div class="form-footer">
+      <div class="presets-inline" id="presets-list"></div>
+      <span class="no-presets" id="presets-empty">Пока нет пресетов</span>
+    </div>
+  </div>
+
+  <div class="table-card">
+    <table>
+      <thead>
+        <tr>
+          <th>Ссылка</th>
+          <th>Источник / канал</th>
+          <th class="col-campaign">Кампания</th>
+          <th class="col-purpose">Назначение</th>
+          <th>Создано</th>
+          <th></th>
+        </tr>
+      </thead>
+      <tbody id="registry-body"></tbody>
+    </table>
+    <div class="empty-state" id="registry-empty" style="display:none;">
+      <svg width="34" height="34" viewBox="0 0 24 24" fill="none"><path d="M4 12h16M4 6h16M4 18h10" stroke="currentColor" stroke-width="1.4" stroke-linecap="round"/></svg>
+      <p>Реестр пока пуст</p>
+      <button class="btn btn-primary" id="btn-open-form-empty">Создать первую метку</button>
+    </div>
+    <div class="pagination" id="pagination">
+      <span class="page-info" id="page-info"></span>
+      <div class="page-btns">
+        <button class="icon-btn" id="page-prev" title="Предыдущая страница">
+          <svg width="16" height="16" viewBox="0 0 16 16" fill="none"><path d="M10 3.5L5 8l5 4.5" stroke="currentColor" stroke-width="1.4" stroke-linecap="round" stroke-linejoin="round"/></svg>
+        </button>
+        <button class="icon-btn" id="page-next" title="Следующая страница">
+          <svg width="16" height="16" viewBox="0 0 16 16" fill="none"><path d="M6 3.5L11 8l-5 4.5" stroke="currentColor" stroke-width="1.4" stroke-linecap="round" stroke-linejoin="round"/></svg>
+        </button>
+      </div>
+    </div>
+  </div>
+</div>
+
+<datalist id="dl-source">
+  <option value="yandex"><option value="google"><option value="vk"><option value="telegram">
+  <option value="email"><option value="facebook"><option value="instagram">
+</datalist>
+<datalist id="dl-medium">
+  <option value="cpc"><option value="cpm"><option value="email"><option value="social">
+  <option value="referral"><option value="banner"><option value="push">
+</datalist>
+
+<div class="toast" id="toast"></div>
+
+<div class="overlay" id="overlay-glossary">
+  <div class="modal w-glossary">
+    <div class="modal-head">
+      <h2>Конвенция названий</h2>
+      <button class="modal-close" data-close="overlay-glossary">
+        <svg width="18" height="18" viewBox="0 0 16 16" fill="none"><path d="M4 4l8 8M12 4l-8 8" stroke="currentColor" stroke-width="1.5" stroke-linecap="round"/></svg>
+      </button>
+    </div>
+    <div class="glossary-grid">
+      <div>
+        <div class="gterm"><code>utm_source</code><p>Где стоит ссылка: конкретная площадка или отправитель.</p><div class="gex"><span class="ok">yandex, vk, sendsay</span><span class="bad">Yandex, ВКонтакте</span></div></div>
+        <div class="gterm"><code>utm_medium</code><p>Тип канала, а не площадка. Единый набор значений на все кампании: cpc, cpm, email, social, referral, banner, push.</p><div class="gex"><span class="ok">cpc</span><span class="bad">яндекс_директ</span></div></div>
+        <div class="gterm"><code>utm_campaign</code><p>Название конкретной кампании. Коротко, с датой или периодом, если кампания повторяется.</p><div class="gex"><span class="ok">autumn_sale_2026</span><span class="bad">кампания1(новая)</span></div></div>
+      </div>
+      <div>
+        <div class="gterm"><code>utm_term</code><p>Ключевое слово или сегмент — заполняется только в платном поиске или таргетинге по сегментам.</p></div>
+        <div class="gterm"><code>utm_content</code><p>Что отличает объявление внутри одной кампании — вариант креатива, позиция баннера, номер письма.</p><div class="gex"><span class="ok">banner_top, letter_2</span><span class="bad">вариант Б</span></div></div>
+        <div class="gterm"><code>Назначение</code><p>Пишите так, чтобы через полгода коллега понял источник трафика без вас: канал, дата, конкретный повод.</p></div>
+      </div>
+    </div>
+  </div>
+</div>
+
+<div class="overlay" id="overlay-qr">
+  <div class="modal w-qr">
+    <div class="modal-head" style="margin-bottom:4px;">
+      <h2 style="font-size:14px;">QR-код ссылки</h2>
+      <button class="modal-close" data-close="overlay-qr">
+        <svg width="16" height="16" viewBox="0 0 16 16" fill="none"><path d="M4 4l8 8M12 4l-8 8" stroke="currentColor" stroke-width="1.5" stroke-linecap="round"/></svg>
+      </button>
+    </div>
+    <div class="qr-url" id="qr-url"></div>
+    <div id="qr-canvas-holder"></div>
+    <div class="qr-actions">
+      <button class="btn btn-ghost" id="qr-download">Скачать PNG</button>
+    </div>
+  </div>
+</div>
+
+<script>
+const REGISTRY_KEY = 'registry';
+const PRESETS_KEY = 'presets';
+let registry = [];
+let presets = [];
+
+function showToast(msg){
+  const t = document.getElementById('toast');
+  t.textContent = msg;
+  t.classList.add('show');
+  setTimeout(()=>t.classList.remove('show'), 1700);
+}
+
+function escapeHtml(str){
+  return String(str == null ? '' : str).replace(/[&<>"']/g, ch => ({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'}[ch]));
+}
+
+function openModal(id){ document.getElementById(id).classList.add('open'); }
+function closeModal(id){ document.getElementById(id).classList.remove('open'); }
+document.querySelectorAll('[data-close]').forEach(btn=>{
+  btn.addEventListener('click', ()=> closeModal(btn.getAttribute('data-close')));
+});
+document.querySelectorAll('.overlay').forEach(ov=>{
+  ov.addEventListener('click', (e)=>{ if(e.target === ov) ov.classList.remove('open'); });
+});
+document.addEventListener('keydown', (e)=>{
+  if(e.key === 'Escape'){ document.querySelectorAll('.overlay.open').forEach(ov=>ov.classList.remove('open')); }
+});
+
+const CYR_MAP = {а:'a',б:'b',в:'v',г:'g',д:'d',е:'e',ё:'e',ж:'zh',з:'z',и:'i',й:'y',к:'k',л:'l',м:'m',н:'n',о:'o',п:'p',р:'r',с:'s',т:'t',у:'u',ф:'f',х:'h',ц:'ts',ч:'ch',ш:'sh',щ:'sch',ъ:'',ы:'y',ь:'',э:'e',ю:'yu',я:'ya'};
+
+function transliterateSlug(str){
+  if(!str) return '';
+  let s = str.toLowerCase().trim();
+  s = s.split('').map(ch => CYR_MAP.hasOwnProperty(ch) ? CYR_MAP[ch] : ch).join('');
+  s = s.replace(/\s+/g,'_');
+  s = s.replace(/[^a-z0-9_\-]/g,'');
+  return s;
+}
+
+function buildLink(base, params){
+  let url;
+  try{
+    const raw = base.includes('://') ? base : 'https://' + base;
+    url = new URL(raw);
+  }catch(e){ return null; }
+  Object.entries(params).forEach(([k,v])=>{
+    if(v) url.searchParams.set(k, v);
+  });
+  return url.toString();
+}
+
+function readForm(){
+  return {
+    url: document.getElementById('f-url').value.trim(),
+    source: transliterateSlug(document.getElementById('f-source').value),
+    medium: transliterateSlug(document.getElementById('f-medium').value),
+    campaign: transliterateSlug(document.getElementById('f-campaign').value),
+    term: transliterateSlug(document.getElementById('f-term').value),
+    content: transliterateSlug(document.getElementById('f-content').value),
+    purpose: document.getElementById('f-purpose').value.trim()
+  };
+}
+
+function updatePreview(){
+  const f = readForm();
+  const errBox = document.getElementById('f-error');
+  const dupBox = document.getElementById('f-dup');
+  errBox.style.display = 'none';
+  dupBox.style.display = 'none';
+
+  if(!f.url || !f.source || !f.medium || !f.campaign){
+    document.getElementById('f-preview').innerHTML = 'Заполните поля — ссылка соберётся здесь';
+    return;
+  }
+  const link = buildLink(f.url, {utm_source: f.source, utm_medium: f.medium, utm_campaign: f.campaign, utm_term: f.term, utm_content: f.content});
+  if(!link){
+    document.getElementById('f-preview').textContent = 'Проверьте адрес страницы';
+    return;
+  }
+  document.getElementById('f-preview').innerHTML = '<strong>' + escapeHtml(link) + '</strong>';
+
+  const dup = registry.find(r => r.source===f.source && r.medium===f.medium && r.campaign===f.campaign);
+  if(dup){
+    dupBox.style.display = 'block';
+    dupBox.textContent = 'Похожая метка уже есть в реестре (создана ' + dup.createdAt + '): ' + (dup.purpose || 'без описания') + '.';
+  }
+}
+
+async function loadAll(){
+  try{ const r = await fetch('/api/registry'); registry = r.ok ? await r.json() : []; }catch(e){ registry = []; }
+  try{ const p = await fetch('/api/presets'); presets = p.ok ? await p.json() : []; }catch(e){ presets = []; }
+  renderRegistry();
+  renderPresets();
+}
+async function saveRegistry(){ await fetch('/api/registry', { method: 'POST', headers: {'Content-Type':'application/json'}, body: JSON.stringify(registry) }); }
+async function savePresets(){ await fetch('/api/presets', { method: 'POST', headers: {'Content-Type':'application/json'}, body: JSON.stringify(presets) }); }
+
+function renderPresets(){
+  const list = document.getElementById('presets-list');
+  const empty = document.getElementById('presets-empty');
+  list.innerHTML = '';
+  if(presets.length === 0){ empty.style.display='inline'; return; }
+  empty.style.display = 'none';
+  presets.forEach(p=>{
+    const chip = document.createElement('div');
+    chip.className = 'preset-chip';
+    chip.innerHTML = `<button class="use">${escapeHtml(p.name)}</button><button class="del" title="Удалить пресет">×</button>`;
+    chip.querySelector('.use').onclick = ()=>{
+      document.getElementById('f-source').value = p.source;
+      document.getElementById('f-medium').value = p.medium;
+      if(p.campaign) document.getElementById('f-campaign').value = p.campaign;
+      updatePreview();
+    };
+    chip.querySelector('.del').onclick = async ()=>{
+      presets = presets.filter(x=>x.id!==p.id);
+      await savePresets();
+      renderPresets();
+    };
+    list.appendChild(chip);
+  });
+}
+
+function populateSourceFilter(){
+  const sel = document.getElementById('filter-source');
+  const current = sel.value;
+  const sources = [...new Set(registry.map(r=>r.source))].sort();
+  sel.innerHTML = '<option value="all">Все источники</option>' + sources.map(s=>`<option value="${s}">${s}</option>`).join('');
+  if(sources.includes(current)) sel.value = current;
+}
+
+const PAGE_SIZE = 10;
+let currentPage = 1;
+
+function renderStats(){
+  document.getElementById('top-stats').innerHTML = `
+    <div class="stat"><b>${registry.length}</b><span>меток в реестре</span></div>
+  `;
+}
+
+function renderRegistry(){
+  populateSourceFilter();
+  renderStats();
+  const body = document.getElementById('registry-body');
+  const emptyState = document.getElementById('registry-empty');
+  const q = document.getElementById('filter-search').value.trim().toLowerCase();
+  const sourceFilter = document.getElementById('filter-source').value;
+
+  let rows = [...registry].sort((a,b)=> b.createdAtRaw - a.createdAtRaw);
+  rows = rows.filter(r=>{
+    if(sourceFilter!=='all' && r.source!==sourceFilter) return false;
+    if(q){
+      const hay = (r.fullLink+' '+r.purpose+' '+r.campaign+' '+r.source+' '+r.medium).toLowerCase();
+      if(!hay.includes(q)) return false;
+    }
+    return true;
+  });
+
+  const totalPages = Math.max(1, Math.ceil(rows.length / PAGE_SIZE));
+  if(currentPage > totalPages) currentPage = totalPages;
+  if(currentPage < 1) currentPage = 1;
+  const start = (currentPage - 1) * PAGE_SIZE;
+  const pageRows = rows.slice(start, start + PAGE_SIZE);
+
+  const pagination = document.getElementById('pagination');
+  pagination.style.display = rows.length ? 'flex' : 'none';
+  document.getElementById('page-info').textContent = rows.length
+    ? `${start + 1}–${Math.min(start + PAGE_SIZE, rows.length)} из ${rows.length}`
+    : '';
+  document.getElementById('page-prev').disabled = currentPage <= 1;
+  document.getElementById('page-next').disabled = currentPage >= totalPages;
+
+  body.innerHTML = '';
+  document.querySelector('table').style.display = rows.length ? 'table' : 'none';
+  emptyState.style.display = rows.length ? 'none' : 'block';
+
+  pageRows.forEach(r=>{
+    const tr = document.createElement('tr');
+    tr.innerHTML = `
+      <td class="link-cell">
+        <div class="link-url" title="${escapeHtml(r.fullLink)}">${escapeHtml(r.fullLink)}</div>
+        <div class="row-actions">
+          <button class="icon-btn copy-link" title="Копировать ссылку">
+            <svg width="15" height="15" viewBox="0 0 16 16" fill="none"><rect x="5.5" y="5.5" width="8" height="8" rx="1.4" stroke="currentColor" stroke-width="1.3"/><path d="M3 10.5V3.9A1.4 1.4 0 0 1 4.4 2.5H11" stroke="currentColor" stroke-width="1.3"/></svg>
+          </button>
+          <button class="icon-btn qr-link" title="QR-код">
+            <svg width="15" height="15" viewBox="0 0 16 16" fill="none"><rect x="2" y="2" width="4.5" height="4.5" stroke="currentColor" stroke-width="1.2"/><rect x="9.5" y="2" width="4.5" height="4.5" stroke="currentColor" stroke-width="1.2"/><rect x="2" y="9.5" width="4.5" height="4.5" stroke="currentColor" stroke-width="1.2"/><rect x="10" y="10" width="1.6" height="1.6" fill="currentColor"/><rect x="13" y="10" width="1" height="1" fill="currentColor"/><rect x="10" y="13" width="1" height="1" fill="currentColor"/><rect x="12.5" y="12.5" width="1.8" height="1.8" fill="currentColor"/></svg>
+          </button>
+        </div>
+      </td>
+      <td class="tag-pair"><span class="badge-source">${escapeHtml(r.source)}</span><span class="med">${escapeHtml(r.medium)}</span></td>
+      <td class="campaign-cell">${escapeHtml(r.campaign)}</td>
+      <td class="purpose-cell">${r.purpose ? escapeHtml(r.purpose) : '—'}</td>
+      <td style="color:var(--ink-soft);">${r.createdAt}</td>
+      <td>
+        <button class="icon-btn danger del-row" title="Удалить">
+          <svg width="15" height="15" viewBox="0 0 16 16" fill="none"><path d="M3 4.5h10M6.5 4.5V3a1 1 0 0 1 1-1h1a1 1 0 0 1 1 1v1.5M6 7.3v4M10 7.3v4M4 4.5l.6 8a1.4 1.4 0 0 0 1.4 1.3h4a1.4 1.4 0 0 0 1.4-1.3l.6-8" stroke="currentColor" stroke-width="1.3" stroke-linecap="round"/></svg>
+        </button>
+      </td>
+    `;
+    tr.querySelector('.copy-link').onclick = ()=>{ navigator.clipboard.writeText(r.fullLink); showToast('Ссылка скопирована'); };
+    tr.querySelector('.qr-link').onclick = ()=> openQr(r.fullLink);
+    tr.querySelector('.del-row').onclick = async ()=>{
+      if(!confirm('Удалить эту метку из реестра?')) return;
+      registry = registry.filter(x=>x.id!==r.id);
+      await saveRegistry();
+      renderRegistry();
+    };
+    body.appendChild(tr);
+  });
+}
+
+function openQr(link){
+  document.getElementById('qr-url').textContent = link;
+  const holder = document.getElementById('qr-canvas-holder');
+  holder.innerHTML = '';
+  new QRCode(holder, { text: link, width: 168, height: 168, colorDark: '#17181B', colorLight: '#ffffff' });
+  openModal('overlay-qr');
+}
+document.getElementById('qr-download').onclick = ()=>{
+  const holder = document.getElementById('qr-canvas-holder');
+  const canvas = holder.querySelector('canvas');
+  const img = holder.querySelector('img');
+  const dataUrl = canvas ? canvas.toDataURL('image/png') : (img ? img.src : null);
+  if(!dataUrl){ showToast('Не удалось получить изображение'); return; }
+  const a = document.createElement('a');
+  a.href = dataUrl;
+  a.download = 'qr-utm.png';
+  a.click();
+};
+
+function openFormPanel(){
+  document.getElementById('form-panel').classList.add('open');
+  document.getElementById('form-panel').scrollIntoView({behavior:'smooth', block:'start'});
+  document.getElementById('f-url').focus();
+}
+function toggleFormPanel(){
+  const panel = document.getElementById('form-panel');
+  if(panel.classList.contains('open')){ panel.classList.remove('open'); }
+  else{ openFormPanel(); }
+}
+document.getElementById('btn-open-form').onclick = toggleFormPanel;
+document.getElementById('btn-open-form-empty').onclick = openFormPanel;
+document.getElementById('btn-collapse-form').onclick = ()=> document.getElementById('form-panel').classList.remove('open');
+document.getElementById('btn-open-glossary').onclick = ()=> openModal('overlay-glossary');
+
+document.getElementById('f-savepreset').addEventListener('change', (e)=>{
+  document.getElementById('f-presetname-wrap').style.display = e.target.checked ? 'block' : 'none';
+});
+
+['f-url','f-source','f-medium','f-campaign','f-term','f-content'].forEach(id=>{
+  document.getElementById(id).addEventListener('input', updatePreview);
+});
+
+const REQUIRED_FIELDS = ['f-url','f-source','f-medium','f-campaign','f-purpose'];
+
+function clearInvalid(id){ document.getElementById(id).classList.remove('field-invalid'); }
+REQUIRED_FIELDS.forEach(id=>{
+  document.getElementById(id).addEventListener('input', ()=> clearInvalid(id));
+});
+
+document.getElementById('btn-copy-preview').addEventListener('click', async ()=>{
+  const f = readForm();
+  const errBox = document.getElementById('f-error');
+  const dupBox = document.getElementById('f-dup');
+
+  const rawEmpty = REQUIRED_FIELDS.filter(id=> !document.getElementById(id).value.trim());
+  const normalizedKeys = {'f-source':'source','f-medium':'medium','f-campaign':'campaign'};
+  const normalizedEmpty = Object.keys(normalizedKeys).filter(id=> !rawEmpty.includes(id) && !f[normalizedKeys[id]]);
+  const invalid = [...rawEmpty, ...normalizedEmpty];
+
+  REQUIRED_FIELDS.forEach(id=> clearInvalid(id));
+  if(invalid.length){
+    invalid.forEach(id=> document.getElementById(id).classList.add('field-invalid'));
+    errBox.textContent = normalizedEmpty.length && !rawEmpty.length
+      ? 'В выделенных полях после очистки от спецсимволов ничего не осталось — используйте буквы и цифры.'
+      : 'Заполните выделенные поля, чтобы скопировать и сохранить ссылку.';
+    errBox.style.display = 'block';
+    dupBox.style.display = 'none';
+    document.getElementById(invalid[0]).focus();
+    return;
+  }
+
+  const link = buildLink(f.url, {utm_source: f.source, utm_medium: f.medium, utm_campaign: f.campaign, utm_term: f.term, utm_content: f.content});
+  if(!link){
+    document.getElementById('f-url').classList.add('field-invalid');
+    errBox.textContent = 'Проверьте адрес страницы — не удалось собрать ссылку.';
+    errBox.style.display = 'block';
+    return;
+  }
+  errBox.style.display = 'none';
+
+  const now = new Date();
+  const entry = {
+    id: 'utm_' + now.getTime() + '_' + Math.random().toString(36).slice(2,7),
+    fullLink: link, baseUrl: f.url,
+    source: f.source, medium: f.medium, campaign: f.campaign, term: f.term, content: f.content,
+    purpose: f.purpose,
+    createdAt: now.toLocaleDateString('ru-RU', {day:'2-digit',month:'2-digit',year:'numeric'}),
+    createdAtRaw: now.getTime()
+  };
+  registry.push(entry);
+  await saveRegistry();
+
+  if(document.getElementById('f-savepreset').checked){
+    const name = document.getElementById('f-presetname').value.trim() || (f.source + ' / ' + f.medium);
+    presets.push({ id: 'preset_'+now.getTime(), name, source: f.source, medium: f.medium, campaign: '' });
+    await savePresets();
+    renderPresets();
+  }
+
+  navigator.clipboard.writeText(link);
+
+  ['f-url','f-source','f-medium','f-campaign','f-term','f-content','f-purpose'].forEach(id=>document.getElementById(id).value='');
+  document.getElementById('f-savepreset').checked = false;
+  document.getElementById('f-presetname-wrap').style.display = 'none';
+  document.getElementById('f-presetname').value='';
+  updatePreview();
+  currentPage = 1;
+  renderRegistry();
+  document.getElementById('form-panel').classList.remove('open');
+  showToast('Ссылка скопирована и добавлена в реестр');
+});
+
+document.getElementById('filter-search').addEventListener('input', ()=>{ currentPage = 1; renderRegistry(); });
+document.getElementById('filter-source').addEventListener('change', ()=>{ currentPage = 1; renderRegistry(); });
+document.getElementById('page-prev').addEventListener('click', ()=>{ currentPage--; renderRegistry(); document.querySelector('.table-card').scrollIntoView({behavior:'smooth', block:'nearest'}); });
+document.getElementById('page-next').addEventListener('click', ()=>{ currentPage++; renderRegistry(); document.querySelector('.table-card').scrollIntoView({behavior:'smooth', block:'nearest'}); });
+
+loadAll();
+</script>
+</body>
+</html>

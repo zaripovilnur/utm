@@ -1,0 +1,12 @@
+{
+  "name": "utm-registry",
+  "version": "1.0.0",
+  "description": "UTM-реестр — веб-приложение для хранения UTM-меток команды",
+  "main": "server.js",
+  "scripts": {
+    "start": "node server.js"
+  },
+  "dependencies": {
+    "express": "^4.19.2"
+  }
+}
