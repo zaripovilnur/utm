@@ -121,10 +121,10 @@
   label{display:block;font-size:12.5px;color:var(--ink-soft);margin:0 0 5px;font-weight:500;}
   .field{margin-bottom:13px;}
   .field.req label:after{content:" *";color:var(--danger);}
-  input[type=text],textarea{width:100%;border:1px solid var(--line);border-radius:var(--r-sm);padding:9px 10px;font-family:var(--sans);font-size:13.5px;background:var(--surface);color:var(--ink);}
+  input[type=text],textarea,select.field-select{width:100%;border:1px solid var(--line);border-radius:var(--r-sm);padding:9px 10px;font-family:var(--sans);font-size:13.5px;background:var(--surface);color:var(--ink);}
   input[list]{font-family:var(--mono);}
-  input[type=text]:focus,textarea:focus{outline:none;border-color:var(--accent);box-shadow:0 0 0 3px var(--accent-soft);}
-  input.field-invalid,textarea.field-invalid{border-color:var(--danger);box-shadow:0 0 0 3px var(--danger-soft);}
+  input[type=text]:focus,textarea:focus,select.field-select:focus{outline:none;border-color:var(--accent);box-shadow:0 0 0 3px var(--accent-soft);}
+  input.field-invalid,textarea.field-invalid,select.field-invalid{border-color:var(--danger);box-shadow:0 0 0 3px var(--danger-soft);}
   .row2{display:grid;grid-template-columns:1fr 1fr;gap:10px;}
   textarea{resize:vertical;min-height:60px;}
   .hint{font-size:11.5px;color:var(--ink-faint);margin-top:-7px;margin-bottom:13px;}
@@ -139,7 +139,7 @@
   .checkline{display:flex;align-items:center;gap:8px;margin:2px 0 12px;font-size:13px;color:var(--ink-soft);}
   .checkline input{width:auto;}
 
-  .form-footer{display:flex;justify-content:space-between;align-items:center;gap:12px;margin-top:6px;border-top:1px solid var(--line-soft);padding-top:16px;}
+  .form-footer{display:flex;flex-direction:column;align-items:stretch;gap:12px;margin-top:6px;border-top:1px solid var(--line-soft);padding-top:16px;}
   .presets-inline{display:flex;flex-wrap:wrap;gap:6px;flex:1;}
   .preset-chip{display:inline-flex;align-items:center;gap:6px;border:1px solid var(--line);border-radius:99px;padding:5px 6px 5px 11px;font-size:12px;background:var(--surface);}
   .preset-chip button.use{border:none;background:none;padding:0;font:inherit;color:var(--ink);font-weight:500;}
@@ -148,6 +148,10 @@
   .no-presets{font-size:12px;color:var(--ink-faint);}
   .preset-fields-row{display:flex;flex-wrap:wrap;gap:4px 14px;margin:2px 0 10px;}
   .preset-fields-row .checkline{margin:0;font-family:var(--mono);font-size:12px;}
+  .preset-group{margin-bottom:10px;}
+  .preset-group:last-child{margin-bottom:0;}
+  .preset-group-label{font-size:11px;font-weight:600;color:var(--ink-faint);text-transform:uppercase;letter-spacing:.03em;margin-bottom:5px;}
+  .badge-company{display:inline-block;background:var(--active-soft);color:var(--active);border-radius:5px;padding:1px 6px;font-size:11.5px;font-family:var(--mono);}
 
   /* glossary */
   .glossary-grid{display:grid;grid-template-columns:1fr 1fr;gap:22px;}
@@ -192,8 +196,11 @@
       <svg width="15" height="15" viewBox="0 0 16 16" fill="none"><circle cx="7" cy="7" r="5.2" stroke="currentColor" stroke-width="1.4"/><path d="M11 11l3.3 3.3" stroke="currentColor" stroke-width="1.4" stroke-linecap="round"/></svg>
       <input type="text" id="filter-search" placeholder="Поиск по ссылке, назначению, кампании…">
     </div>
-    <select class="chip-select" id="filter-source">
-      <option value="all">Все источники</option>
+    <select class="chip-select" id="filter-company">
+      <option value="all">Все компании</option>
+      <option value="YADRO">YADRO</option>
+      <option value="KVADRA">KVADRA</option>
+      <option value="X">X</option>
     </select>
     <div class="spacer"></div>
     <button class="btn btn-ghost" id="btn-open-glossary">
@@ -216,6 +223,15 @@
 
     <div class="form-grid2">
       <div>
+        <div class="field req">
+          <label for="f-company">Компания</label>
+          <select class="field-select" id="f-company">
+            <option value="">Выберите компанию</option>
+            <option value="YADRO">YADRO</option>
+            <option value="KVADRA">KVADRA</option>
+            <option value="X">X</option>
+          </select>
+        </div>
         <div class="field req">
           <label for="f-url">Ссылка на страницу</label>
           <input type="text" id="f-url" placeholder="https://site.ru/promo">
@@ -264,6 +280,7 @@
 
         <label class="checkline"><input type="checkbox" id="f-savepreset"> Сохранить как пресет</label>
         <div class="field" id="f-presetname-wrap" style="display:none;">
+          <div class="hint" style="margin-top:0;">Пресет сохранится в папку выбранной компании</div>
           <label style="font-size:12px;color:var(--ink-faint);font-weight:500;margin-bottom:6px;">Из каких меток состоит пресет</label>
           <div class="preset-fields-row">
             <label class="checkline"><input type="checkbox" id="f-preset-source" checked> utm_source</label>
@@ -278,8 +295,7 @@
     </div>
 
     <div class="form-footer">
-      <div class="presets-inline" id="presets-list"></div>
-      <span class="no-presets" id="presets-empty">Пока нет пресетов</span>
+      <div id="presets-list"></div>
     </div>
   </div>
 
@@ -288,6 +304,7 @@
       <thead>
         <tr>
           <th>Ссылка</th>
+          <th>Компания</th>
           <th>Источник / канал</th>
           <th class="col-campaign">Кампания</th>
           <th class="col-purpose">Назначение</th>
@@ -443,6 +460,7 @@ function buildLink(base, params){
 
 function readForm(){
   return {
+    company: document.getElementById('f-company').value,
     url: document.getElementById('f-url').value.trim(),
     source: transliterateSlug(document.getElementById('f-source').value),
     medium: transliterateSlug(document.getElementById('f-medium').value),
@@ -479,6 +497,7 @@ function updatePreview(){
 }
 
 const PRESET_FIELD_KEYS = ['source','medium','campaign','term','content'];
+const FOLDERS = ['YADRO','KVADRA','X'];
 
 async function loadAll(){
   try{ const r = await fetch('/api/registry'); registry = r.ok ? await r.json() : []; }catch(e){ registry = []; }
@@ -489,40 +508,51 @@ async function loadAll(){
 async function saveRegistry(){ await fetch('/api/registry', { method: 'POST', headers: {'Content-Type':'application/json'}, body: JSON.stringify(registry) }); }
 async function savePresets(){ await fetch('/api/presets', { method: 'POST', headers: {'Content-Type':'application/json'}, body: JSON.stringify(presets) }); }
 
-function renderPresets(){
-  const list = document.getElementById('presets-list');
-  const empty = document.getElementById('presets-empty');
-  list.innerHTML = '';
-  if(presets.length === 0){ empty.style.display='inline'; return; }
-  empty.style.display = 'none';
-  presets.forEach(p=>{
-    const chip = document.createElement('div');
-    chip.className = 'preset-chip';
-    chip.innerHTML = `<button class="use">${escapeHtml(p.name)}</button><button class="del" title="Удалить пресет">×</button>`;
-    chip.querySelector('.use').onclick = ()=>{
-      const fields = p.fields || ['source','medium', ...(p.campaign ? ['campaign'] : [])];
-      fields.forEach(key=>{
-        if(PRESET_FIELD_KEYS.includes(key) && p[key] !== undefined){
-          document.getElementById('f-'+key).value = p[key];
-        }
-      });
-      updatePreview();
-    };
-    chip.querySelector('.del').onclick = async ()=>{
-      presets = presets.filter(x=>x.id!==p.id);
-      await savePresets();
-      renderPresets();
-    };
-    list.appendChild(chip);
-  });
+function buildPresetChip(p){
+  const chip = document.createElement('div');
+  chip.className = 'preset-chip';
+  chip.innerHTML = `<button class="use">${escapeHtml(p.name)}</button><button class="del" title="Удалить пресет">×</button>`;
+  chip.querySelector('.use').onclick = ()=>{
+    const fields = p.fields || ['source','medium', ...(p.campaign ? ['campaign'] : [])];
+    fields.forEach(key=>{
+      if(PRESET_FIELD_KEYS.includes(key) && p[key] !== undefined){
+        document.getElementById('f-'+key).value = p[key];
+      }
+    });
+    if(p.folder) document.getElementById('f-company').value = p.folder;
+    updatePreview();
+  };
+  chip.querySelector('.del').onclick = async ()=>{
+    presets = presets.filter(x=>x.id!==p.id);
+    await savePresets();
+    renderPresets();
+  };
+  return chip;
 }
 
-function populateSourceFilter(){
-  const sel = document.getElementById('filter-source');
-  const current = sel.value;
-  const sources = [...new Set(registry.map(r=>r.source))].sort();
-  sel.innerHTML = '<option value="all">Все источники</option>' + sources.map(s=>`<option value="${s}">${s}</option>`).join('');
-  if(sources.includes(current)) sel.value = current;
+function renderPresets(){
+  const container = document.getElementById('presets-list');
+  container.innerHTML = '';
+  const legacy = presets.filter(p=> !p.folder);
+  const groups = legacy.length ? [...FOLDERS, null] : FOLDERS;
+  groups.forEach(folder=>{
+    const items = folder === null ? legacy : presets.filter(p=> p.folder === folder);
+    const group = document.createElement('div');
+    group.className = 'preset-group';
+    const label = document.createElement('div');
+    label.className = 'preset-group-label';
+    label.textContent = folder || 'Без папки';
+    group.appendChild(label);
+    const chipsWrap = document.createElement('div');
+    chipsWrap.className = 'presets-inline';
+    if(items.length === 0){
+      chipsWrap.innerHTML = '<span class="no-presets">Пока нет пресетов</span>';
+    }else{
+      items.forEach(p=> chipsWrap.appendChild(buildPresetChip(p)));
+    }
+    group.appendChild(chipsWrap);
+    container.appendChild(group);
+  });
 }
 
 const PAGE_SIZE = 10;
@@ -535,18 +565,17 @@ function renderStats(){
 }
 
 function renderRegistry(){
-  populateSourceFilter();
   renderStats();
   const body = document.getElementById('registry-body');
   const emptyState = document.getElementById('registry-empty');
   const q = document.getElementById('filter-search').value.trim().toLowerCase();
-  const sourceFilter = document.getElementById('filter-source').value;
+  const companyFilter = document.getElementById('filter-company').value;
 
   let rows = [...registry].sort((a,b)=> b.createdAtRaw - a.createdAtRaw);
   rows = rows.filter(r=>{
-    if(sourceFilter!=='all' && r.source!==sourceFilter) return false;
+    if(companyFilter!=='all' && r.company!==companyFilter) return false;
     if(q){
-      const hay = (r.fullLink+' '+r.purpose+' '+r.campaign+' '+r.source+' '+r.medium).toLowerCase();
+      const hay = (r.fullLink+' '+r.purpose+' '+r.campaign+' '+r.source+' '+r.medium+' '+(r.company||'')).toLowerCase();
       if(!hay.includes(q)) return false;
     }
     return true;
@@ -584,6 +613,7 @@ function renderRegistry(){
           </button>
         </div>
       </td>
+      <td>${r.company ? `<span class="badge-company">${escapeHtml(r.company)}</span>` : '—'}</td>
       <td class="tag-pair"><span class="badge-source">${escapeHtml(r.source)}</span><span class="med">${escapeHtml(r.medium)}</span></td>
       <td class="campaign-cell">${escapeHtml(r.campaign)}</td>
       <td class="purpose-cell">${r.purpose ? escapeHtml(r.purpose) : '—'}</td>
@@ -680,11 +710,13 @@ document.getElementById('f-savepreset').addEventListener('change', (e)=>{
   document.getElementById(id).addEventListener('input', updatePreview);
 });
 
-const REQUIRED_FIELDS = ['f-url','f-source','f-medium','f-campaign','f-purpose'];
+const REQUIRED_FIELDS = ['f-company','f-url','f-source','f-medium','f-campaign','f-purpose'];
 
 function clearInvalid(id){ document.getElementById(id).classList.remove('field-invalid'); }
 REQUIRED_FIELDS.forEach(id=>{
-  document.getElementById(id).addEventListener('input', ()=> clearInvalid(id));
+  const el = document.getElementById(id);
+  el.addEventListener('input', ()=> clearInvalid(id));
+  if(el.tagName === 'SELECT') el.addEventListener('change', ()=> clearInvalid(id));
 });
 
 document.getElementById('btn-copy-preview').addEventListener('click', async ()=>{
@@ -721,6 +753,7 @@ document.getElementById('btn-copy-preview').addEventListener('click', async ()=>
   const now = new Date();
   const entry = {
     id: 'utm_' + now.getTime() + '_' + Math.random().toString(36).slice(2,7),
+    company: f.company,
     fullLink: link, baseUrl: f.url,
     source: f.source, medium: f.medium, campaign: f.campaign, term: f.term, content: f.content,
     purpose: f.purpose,
@@ -734,7 +767,7 @@ document.getElementById('btn-copy-preview').addEventListener('click', async ()=>
     const fields = PRESET_FIELD_KEYS.filter(key => document.getElementById('f-preset-'+key).checked);
     if(fields.length){
       const name = document.getElementById('f-presetname').value.trim() || (f.source + ' / ' + f.medium);
-      const preset = { id: 'preset_'+now.getTime(), name, fields };
+      const preset = { id: 'preset_'+now.getTime(), name, fields, folder: f.company };
       fields.forEach(key => { preset[key] = f[key]; });
       presets.push(preset);
       await savePresets();
@@ -744,7 +777,7 @@ document.getElementById('btn-copy-preview').addEventListener('click', async ()=>
 
   const copied = await copyToClipboard(link);
 
-  ['f-url','f-source','f-medium','f-campaign','f-term','f-content','f-purpose'].forEach(id=>document.getElementById(id).value='');
+  ['f-company','f-url','f-source','f-medium','f-campaign','f-term','f-content','f-purpose'].forEach(id=>document.getElementById(id).value='');
   document.getElementById('f-savepreset').checked = false;
   document.getElementById('f-presetname-wrap').style.display = 'none';
   document.getElementById('f-presetname').value='';
@@ -761,7 +794,7 @@ document.getElementById('btn-copy-preview').addEventListener('click', async ()=>
 });
 
 document.getElementById('filter-search').addEventListener('input', ()=>{ currentPage = 1; renderRegistry(); });
-document.getElementById('filter-source').addEventListener('change', ()=>{ currentPage = 1; renderRegistry(); });
+document.getElementById('filter-company').addEventListener('change', ()=>{ currentPage = 1; renderRegistry(); });
 document.getElementById('page-prev').addEventListener('click', ()=>{ currentPage--; renderRegistry(); document.querySelector('.table-card').scrollIntoView({behavior:'smooth', block:'nearest'}); });
 document.getElementById('page-next').addEventListener('click', ()=>{ currentPage++; renderRegistry(); document.querySelector('.table-card').scrollIntoView({behavior:'smooth', block:'nearest'}); });
 
