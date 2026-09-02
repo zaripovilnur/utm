@@ -146,6 +146,8 @@
   .preset-chip .del{border:none;background:none;color:var(--ink-faint);padding:1px 5px;font-size:13px;line-height:1;border-radius:50%;}
   .preset-chip .del:hover{background:var(--danger-soft);color:var(--danger);}
   .no-presets{font-size:12px;color:var(--ink-faint);}
+  .preset-fields-row{display:flex;flex-wrap:wrap;gap:4px 14px;margin:2px 0 10px;}
+  .preset-fields-row .checkline{margin:0;font-family:var(--mono);font-size:12px;}
 
   /* glossary */
   .glossary-grid{display:grid;grid-template-columns:1fr 1fr;gap:22px;}
@@ -260,8 +262,16 @@
           <button class="btn btn-primary" id="btn-copy-preview" style="width:100%;">Скопировать ссылку</button>
         </div>
 
-        <label class="checkline"><input type="checkbox" id="f-savepreset"> Сохранить источник/канал как пресет</label>
+        <label class="checkline"><input type="checkbox" id="f-savepreset"> Сохранить как пресет</label>
         <div class="field" id="f-presetname-wrap" style="display:none;">
+          <label style="font-size:12px;color:var(--ink-faint);font-weight:500;margin-bottom:6px;">Из каких меток состоит пресет</label>
+          <div class="preset-fields-row">
+            <label class="checkline"><input type="checkbox" id="f-preset-source" checked> utm_source</label>
+            <label class="checkline"><input type="checkbox" id="f-preset-medium" checked> utm_medium</label>
+            <label class="checkline"><input type="checkbox" id="f-preset-campaign"> utm_campaign</label>
+            <label class="checkline"><input type="checkbox" id="f-preset-term"> utm_term</label>
+            <label class="checkline"><input type="checkbox" id="f-preset-content"> utm_content</label>
+          </div>
           <input type="text" id="f-presetname" placeholder="Название пресета, напр. «Яндекс Директ»">
         </div>
       </div>
@@ -468,6 +478,8 @@ function updatePreview(){
   }
 }
 
+const PRESET_FIELD_KEYS = ['source','medium','campaign','term','content'];
+
 async function loadAll(){
   try{ const r = await fetch('/api/registry'); registry = r.ok ? await r.json() : []; }catch(e){ registry = []; }
   try{ const p = await fetch('/api/presets'); presets = p.ok ? await p.json() : []; }catch(e){ presets = []; }
@@ -488,9 +500,12 @@ function renderPresets(){
     chip.className = 'preset-chip';
     chip.innerHTML = `<button class="use">${escapeHtml(p.name)}</button><button class="del" title="Удалить пресет">×</button>`;
     chip.querySelector('.use').onclick = ()=>{
-      document.getElementById('f-source').value = p.source;
-      document.getElementById('f-medium').value = p.medium;
-      if(p.campaign) document.getElementById('f-campaign').value = p.campaign;
+      const fields = p.fields || ['source','medium', ...(p.campaign ? ['campaign'] : [])];
+      fields.forEach(key=>{
+        if(PRESET_FIELD_KEYS.includes(key) && p[key] !== undefined){
+          document.getElementById('f-'+key).value = p[key];
+        }
+      });
       updatePreview();
     };
     chip.querySelector('.del').onclick = async ()=>{
@@ -716,10 +731,15 @@ document.getElementById('btn-copy-preview').addEventListener('click', async ()=>
   await saveRegistry();
 
   if(document.getElementById('f-savepreset').checked){
-    const name = document.getElementById('f-presetname').value.trim() || (f.source + ' / ' + f.medium);
-    presets.push({ id: 'preset_'+now.getTime(), name, source: f.source, medium: f.medium, campaign: '' });
-    await savePresets();
-    renderPresets();
+    const fields = PRESET_FIELD_KEYS.filter(key => document.getElementById('f-preset-'+key).checked);
+    if(fields.length){
+      const name = document.getElementById('f-presetname').value.trim() || (f.source + ' / ' + f.medium);
+      const preset = { id: 'preset_'+now.getTime(), name, fields };
+      fields.forEach(key => { preset[key] = f[key]; });
+      presets.push(preset);
+      await savePresets();
+      renderPresets();
+    }
   }
 
   const copied = await copyToClipboard(link);
@@ -728,6 +748,11 @@ document.getElementById('btn-copy-preview').addEventListener('click', async ()=>
   document.getElementById('f-savepreset').checked = false;
   document.getElementById('f-presetname-wrap').style.display = 'none';
   document.getElementById('f-presetname').value='';
+  document.getElementById('f-preset-source').checked = true;
+  document.getElementById('f-preset-medium').checked = true;
+  document.getElementById('f-preset-campaign').checked = false;
+  document.getElementById('f-preset-term').checked = false;
+  document.getElementById('f-preset-content').checked = false;
   updatePreview();
   currentPage = 1;
   renderRegistry();
