@@ -4,6 +4,7 @@
 <meta charset="UTF-8">
 <title>UTM-реестр</title>
 <script src="https://cdnjs.cloudflare.com/ajax/libs/qrcodejs/1.0.0/qrcode.min.js"></script>
+<script src="https://cdnjs.cloudflare.com/ajax/libs/xlsx/0.18.5/xlsx.full.min.js"></script>
 <style>
   :root{
     --bg:#F6F6F3;
@@ -285,6 +286,10 @@
       <option value="KVADRA">KVADRA</option>
       <option value="X">X</option>
     </select>
+    <button class="btn btn-ghost" id="btn-export-excel">
+      <svg width="15" height="15" viewBox="0 0 16 16" fill="none"><path d="M8 2v8.5M8 10.5L5 7.5M8 10.5l3-3" stroke="currentColor" stroke-width="1.4" stroke-linecap="round" stroke-linejoin="round"/><path d="M3 11.5V13a1 1 0 0 0 1 1h8a1 1 0 0 0 1-1v-1.5" stroke="currentColor" stroke-width="1.4" stroke-linecap="round"/></svg>
+      Экспорт в Excel
+    </button>
   </div>
 
   <div class="table-card">
@@ -567,15 +572,12 @@ function renderStats(){
   `;
 }
 
-function renderRegistry(){
-  renderStats();
-  const body = document.getElementById('registry-body');
-  const emptyState = document.getElementById('registry-empty');
+function getFilteredRegistry(){
   const q = document.getElementById('filter-search').value.trim().toLowerCase();
   const companyFilter = document.getElementById('filter-company').value;
 
   let rows = [...registry].sort((a,b)=> b.createdAtRaw - a.createdAtRaw);
-  rows = rows.filter(r=>{
+  return rows.filter(r=>{
     if(companyFilter!=='all' && r.company!==companyFilter) return false;
     if(q){
       const hay = (r.fullLink+' '+r.purpose+' '+r.campaign+' '+r.source+' '+r.medium+' '+(r.company||'')).toLowerCase();
@@ -583,6 +585,13 @@ function renderRegistry(){
     }
     return true;
   });
+}
+
+function renderRegistry(){
+  renderStats();
+  const body = document.getElementById('registry-body');
+  const emptyState = document.getElementById('registry-empty');
+  const rows = getFilteredRegistry();
 
   const totalPages = Math.max(1, Math.ceil(rows.length / PAGE_SIZE));
   if(currentPage > totalPages) currentPage = totalPages;
@@ -694,6 +703,36 @@ document.getElementById('qr-download').onclick = ()=>{
   a.download = 'qr-utm-print.png';
   a.click();
 };
+
+function exportRegistryToExcel(){
+  if(typeof XLSX === 'undefined'){
+    showToast('Не удалось загрузить модуль экспорта — проверьте подключение к интернету');
+    return;
+  }
+  const rows = getFilteredRegistry();
+  if(!rows.length){
+    showToast('Нечего экспортировать — список пуст');
+    return;
+  }
+  const data = rows.map(r=>({
+    'Компания': r.company || '',
+    'utm_source': r.source,
+    'utm_medium': r.medium,
+    'utm_campaign': r.campaign,
+    'utm_term': r.term || '',
+    'utm_content': r.content || '',
+    'Назначение': r.purpose || '',
+    'Ссылка': r.fullLink,
+    'Создано': r.createdAt
+  }));
+  const ws = XLSX.utils.json_to_sheet(data);
+  ws['!cols'] = [{wch:10},{wch:14},{wch:12},{wch:26},{wch:16},{wch:16},{wch:32},{wch:55},{wch:12}];
+  const wb = XLSX.utils.book_new();
+  XLSX.utils.book_append_sheet(wb, ws, 'UTM-реестр');
+  const stamp = new Date().toISOString().slice(0,10);
+  XLSX.writeFile(wb, `utm-registry-${stamp}.xlsx`);
+}
+document.getElementById('btn-export-excel').onclick = exportRegistryToExcel;
 
 function openFormPanel(){
   document.getElementById('form-panel').scrollIntoView({behavior:'smooth', block:'start'});
