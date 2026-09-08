@@ -365,6 +365,7 @@
     <div id="qr-canvas-holder"></div>
     <div class="qr-actions">
       <button class="btn btn-ghost" id="qr-download">Скачать PNG</button>
+      <button class="btn btn-ghost" id="qr-download-ai">Скачать AI</button>
     </div>
   </div>
 </div>
@@ -702,6 +703,84 @@ document.getElementById('qr-download').onclick = ()=>{
   a.href = dataUrl;
   a.download = 'qr-utm-print.png';
   a.click();
+};
+
+// Векторный QR: читаем сетку модулей напрямую из модели qrcodejs (та же
+// библиотека, что рисует превью) и рисуем каждый тёмный модуль прямоугольником
+// в PostScript/EPS — это "старый" формат Illustrator (.ai до версии 9 — по сути
+// EPS), поэтому файл открывается в Illustrator как полностью векторная, редактируемая графика.
+function getQrModuleGrid(link){
+  if(typeof QRCode === 'undefined') return null;
+  const tmp = document.createElement('div');
+  tmp.style.position = 'fixed';
+  tmp.style.left = '-9999px';
+  document.body.appendChild(tmp);
+  const qr = new QRCode(tmp, { text: link, width: 8, height: 8, correctLevel: QRCode.CorrectLevel.H });
+  const model = qr._oQRCode;
+  let grid = null;
+  if(model && typeof model.getModuleCount === 'function'){
+    const count = model.getModuleCount();
+    grid = [];
+    for(let row=0; row<count; row++){
+      const line = [];
+      for(let col=0; col<count; col++){
+        line.push(model.isDark(row, col));
+      }
+      grid.push(line);
+    }
+  }
+  document.body.removeChild(tmp);
+  return grid;
+}
+
+const QR_VECTOR_MODULE_SIZE = 10;
+const QR_VECTOR_QUIET_MODULES = 4;
+
+function buildQrAiFile(link){
+  const grid = getQrModuleGrid(link);
+  if(!grid) return null;
+  const count = grid.length;
+  const totalModules = count + QR_VECTOR_QUIET_MODULES * 2;
+  const size = totalModules * QR_VECTOR_MODULE_SIZE;
+
+  const lines = [];
+  lines.push('%!PS-Adobe-3.0 EPSF-3.0');
+  lines.push('%%Creator: UTM-registry');
+  lines.push('%%Title: qr-utm');
+  lines.push(`%%BoundingBox: 0 0 ${size} ${size}`);
+  lines.push(`%%HiResBoundingBox: 0 0 ${size} ${size}`);
+  lines.push('%%DocumentData: Clean7Bit');
+  lines.push('%%LanguageLevel: 2');
+  lines.push('%%Pages: 1');
+  lines.push('%%EndComments');
+  lines.push('/r { /h exch def /w exch def /y exch def /x exch def newpath x y moveto w 0 rlineto 0 h rlineto w neg 0 rlineto closepath fill } def');
+  lines.push('%%Page: 1 1');
+  lines.push('1 setgray');
+  lines.push(`0 0 ${size} ${size} r`);
+  lines.push('0 setgray');
+  for(let row=0; row<count; row++){
+    for(let col=0; col<count; col++){
+      if(!grid[row][col]) continue;
+      const x = (col + QR_VECTOR_QUIET_MODULES) * QR_VECTOR_MODULE_SIZE;
+      const y = size - (row + QR_VECTOR_QUIET_MODULES + 1) * QR_VECTOR_MODULE_SIZE;
+      lines.push(`${x} ${y} ${QR_VECTOR_MODULE_SIZE} ${QR_VECTOR_MODULE_SIZE} r`);
+    }
+  }
+  lines.push('%%EOF');
+  return lines.join('\n');
+}
+
+document.getElementById('qr-download-ai').onclick = ()=>{
+  if(!currentQrLink){ showToast('Не удалось получить изображение'); return; }
+  const ai = buildQrAiFile(currentQrLink);
+  if(!ai){ showToast('Не удалось создать векторный файл — проверьте подключение к интернету'); return; }
+  const blob = new Blob([ai], { type: 'application/postscript' });
+  const url = URL.createObjectURL(blob);
+  const a = document.createElement('a');
+  a.href = url;
+  a.download = 'qr-utm.ai';
+  a.click();
+  URL.revokeObjectURL(url);
 };
 
 function exportRegistryToExcel(){
