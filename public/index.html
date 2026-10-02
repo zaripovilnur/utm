@@ -2,6 +2,7 @@
 <html lang="ru">
 <head>
 <meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
 <title>UTM-реестр</title>
 <script src="https://cdnjs.cloudflare.com/ajax/libs/qrcodejs/1.0.0/qrcode.min.js"></script>
 <script src="https://cdnjs.cloudflare.com/ajax/libs/xlsx/0.18.5/xlsx.full.min.js"></script>
@@ -31,7 +32,8 @@
     --r-sm:6px; --r-md:10px; --r-lg:14px;
   }
   *{box-sizing:border-box;}
-  body{margin:0;background:var(--bg);color:var(--ink);font-family:var(--sans);font-size:14px;line-height:1.5;-webkit-font-smoothing:antialiased;}
+  html{overflow-x:hidden;}
+  body{margin:0;background:var(--bg);color:var(--ink);font-family:var(--sans);font-size:14px;line-height:1.5;-webkit-font-smoothing:antialiased;overflow-x:hidden;}
   .wrap{max-width:1180px;margin:0 auto;padding:36px 24px 72px;}
   button,input,select,textarea{font-family:var(--sans);}
   :focus-visible{outline:2px solid var(--accent);outline-offset:1px;}
@@ -70,7 +72,8 @@
 
   /* table card */
   .table-card{background:var(--surface);border:1px solid var(--line);border-radius:var(--r-lg);overflow:hidden;}
-  table{width:100%;border-collapse:collapse;font-size:13px;}
+  .table-scroll{overflow-x:auto;-webkit-overflow-scrolling:touch;}
+  table{width:100%;min-width:720px;border-collapse:collapse;font-size:13px;}
   thead th{text-align:left;font-weight:500;color:var(--ink-faint);font-size:11px;text-transform:none;border-bottom:1px solid var(--line);padding:12px 14px;white-space:nowrap;background:#FCFCFB;}
   tbody td{border-bottom:1px solid var(--line-soft);padding:13px 14px;vertical-align:top;}
   tbody tr:last-child td{border-bottom:none;}
@@ -173,8 +176,18 @@
   .qr-actions .btn{flex:1;justify-content:center;}
 
   @media (max-width:640px){
+    .wrap{padding:20px 14px 40px;}
     .top-stats{display:none;}
     .modal{padding:20px;}
+    .toolbar{flex-direction:column;align-items:stretch;}
+    .toolbar .search-wrap{min-width:0;}
+    .form-panel{padding:18px 16px 18px;}
+  }
+
+  @media (max-width:480px){
+    .row2{grid-template-columns:1fr;}
+    .top{gap:14px;}
+    .qr-actions{flex-direction:column;}
   }
 </style>
 </head>
@@ -293,20 +306,22 @@
   </div>
 
   <div class="table-card">
-    <table>
-      <thead>
-        <tr>
-          <th>Ссылка</th>
-          <th>Компания</th>
-          <th>Источник / канал</th>
-          <th class="col-campaign">Кампания</th>
-          <th class="col-purpose">Назначение</th>
-          <th>Создано</th>
-          <th></th>
-        </tr>
-      </thead>
-      <tbody id="registry-body"></tbody>
-    </table>
+    <div class="table-scroll">
+      <table>
+        <thead>
+          <tr>
+            <th>Ссылка</th>
+            <th>Компания</th>
+            <th>Источник / канал</th>
+            <th class="col-campaign">Кампания</th>
+            <th class="col-purpose">Назначение</th>
+            <th>Создано</th>
+            <th></th>
+          </tr>
+        </thead>
+        <tbody id="registry-body"></tbody>
+      </table>
+    </div>
     <div class="empty-state" id="registry-empty" style="display:none;">
       <svg width="34" height="34" viewBox="0 0 24 24" fill="none"><path d="M4 12h16M4 6h16M4 18h10" stroke="currentColor" stroke-width="1.4" stroke-linecap="round"/></svg>
       <p>Реестр пока пуст</p>
