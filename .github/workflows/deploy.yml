@@ -18,4 +18,4 @@ jobs:
             cd ~/utm
             git pull origin claude/utm-registry-webapp-qfeudg
             npm install
-            pm2 restart utm-registry
+            pm2 startOrReload ecosystem.config.js
