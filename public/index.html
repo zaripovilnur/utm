@@ -4,7 +4,7 @@
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width, initial-scale=1">
 <title>UTM-реестр</title>
-<script src="https://cdnjs.cloudflare.com/ajax/libs/qrcodejs/1.0.0/qrcode.min.js"></script>
+<script src="/vendor/qrcode.min.js"></script>
 <style>
   :root{
     --bg:#F6F6F3;
@@ -638,7 +638,7 @@ function renderRegistry(){
       <td class="tag-pair"><span class="badge-source">${escapeHtml(r.source)}</span><span class="med">${escapeHtml(r.medium)}</span></td>
       <td class="campaign-cell">${escapeHtml(r.campaign)}</td>
       <td class="purpose-cell">${r.purpose ? escapeHtml(r.purpose) : '—'}</td>
-      <td style="color:var(--ink-soft);">${r.createdAt}</td>
+      <td style="color:var(--ink-soft);">${escapeHtml(r.createdAt)}</td>
     `;
     tr.querySelector('.copy-link').onclick = async ()=>{
       const ok = await copyToClipboard(r.fullLink);

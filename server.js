@@ -2,6 +2,7 @@ const express = require('express');
 const fs = require('fs/promises');
 const path = require('path');
 const crypto = require('crypto');
+const rateLimit = require('express-rate-limit');
 
 const PORT = process.env.PORT || 3000;
 const DATA_DIR = path.join(__dirname, 'data');
@@ -16,8 +17,16 @@ const ADMIN_SESSION_TTL_MS = 12 * 60 * 60 * 1000; // 12 часов
 const adminSessions = new Map(); // token -> expiresAt
 
 const app = express();
-app.use(express.json());
+app.use(express.json({ limit: '1mb' }));
 app.use(express.static(path.join(__dirname, 'public')));
+
+const loginLimiter = rateLimit({
+  windowMs: 15 * 60 * 1000, // 15 минут
+  max: 5, // максимум 5 попыток за окно с одного IP
+  message: { error: 'Слишком много попыток входа. Попробуйте позже.' },
+  standardHeaders: true,
+  legacyHeaders: false
+});
 
 async function ensureDataFile(file) {
   try {
@@ -75,14 +84,17 @@ function requireAdmin(req, res, next) {
   next();
 }
 
-function timingSafeEqualStr(a, b) {
-  const bufA = Buffer.from(String(a));
-  const bufB = Buffer.from(String(b));
-  if (bufA.length !== bufB.length) {
-    crypto.timingSafeEqual(bufA, bufA); // держим время сравнения постоянным
-    return false;
-  }
-  return crypto.timingSafeEqual(bufA, bufB);
+function timingSafeEqualStr(input, expected) {
+  // timingSafeEqual требует буферы одинаковой длины и бросает исключение иначе,
+  // поэтому нельзя просто сравнить input с expected при разной длине. Вместо
+  // этого всегда сравниваем буфер эталонной длины (truncated/padded ввод) —
+  // время работы crypto.timingSafeEqual не зависит от длины исходного ввода.
+  const expectedBuf = Buffer.from(String(expected), 'utf8');
+  const inputBuf = Buffer.from(String(input), 'utf8');
+  const paddedInput = Buffer.alloc(expectedBuf.length);
+  inputBuf.copy(paddedInput, 0, 0, Math.min(inputBuf.length, expectedBuf.length));
+  const contentMatches = crypto.timingSafeEqual(paddedInput, expectedBuf);
+  return inputBuf.length === expectedBuf.length && contentMatches;
 }
 
 app.get('/api/registry', async (req, res) => {
@@ -117,7 +129,7 @@ app.get('/api/admin/session', (req, res) => {
   res.json({ authenticated: isValidAdminSession(req) });
 });
 
-app.post('/api/admin/login', (req, res) => {
+app.post('/api/admin/login', loginLimiter, (req, res) => {
   if (!ADMIN_PASSWORD) {
     return res.status(503).json({ error: 'ADMIN_PASSWORD не настроен на сервере' });
   }
