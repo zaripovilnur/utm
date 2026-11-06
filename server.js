@@ -15,6 +15,10 @@ const ADMIN_PASSWORD = process.env.ADMIN_PASSWORD || '';
 const ADMIN_SESSION_COOKIE = 'utm_admin_session';
 const ADMIN_SESSION_TTL_MS = 12 * 60 * 60 * 1000; // 12 часов
 const adminSessions = new Map(); // token -> expiresAt
+// По умолчанию включено — сервер должен быть за HTTPS. Для локальной разработки
+// по обычному http:// задайте COOKIE_SECURE=false в .env.
+const COOKIE_SECURE = process.env.COOKIE_SECURE !== 'false';
+const ADMIN_COOKIE_ATTRS = `HttpOnly; Path=/; SameSite=Strict${COOKIE_SECURE ? '; Secure' : ''}`;
 
 const app = express();
 app.use(express.json({ limit: '1mb' }));
@@ -139,14 +143,14 @@ app.post('/api/admin/login', loginLimiter, (req, res) => {
   }
   const token = crypto.randomBytes(24).toString('hex');
   adminSessions.set(token, Date.now() + ADMIN_SESSION_TTL_MS);
-  res.setHeader('Set-Cookie', `${ADMIN_SESSION_COOKIE}=${token}; HttpOnly; Path=/; SameSite=Lax; Max-Age=${ADMIN_SESSION_TTL_MS / 1000}`);
+  res.setHeader('Set-Cookie', `${ADMIN_SESSION_COOKIE}=${token}; ${ADMIN_COOKIE_ATTRS}; Max-Age=${ADMIN_SESSION_TTL_MS / 1000}`);
   res.json({ ok: true });
 });
 
 app.post('/api/admin/logout', (req, res) => {
   const token = parseCookies(req)[ADMIN_SESSION_COOKIE];
   if (token) adminSessions.delete(token);
-  res.setHeader('Set-Cookie', `${ADMIN_SESSION_COOKIE}=; HttpOnly; Path=/; SameSite=Lax; Max-Age=0`);
+  res.setHeader('Set-Cookie', `${ADMIN_SESSION_COOKIE}=; ${ADMIN_COOKIE_ATTRS}; Max-Age=0`);
   res.json({ ok: true });
 });
 
